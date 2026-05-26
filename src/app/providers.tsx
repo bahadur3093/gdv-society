@@ -8,8 +8,10 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
+  const Provider = SessionProvider as any;
   return (
-    // @ts-expect-error SessionProvider type incompatibility with React 19
-    <SessionProvider>{children}</SessionProvider>
+    <Provider session={null} refetchInterval={0}>
+      {children}
+    </Provider>
   );
 }
