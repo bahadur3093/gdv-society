@@ -8,6 +8,8 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-  // @ts-expect-error - SessionProvider from next-auth v4 has type incompatibility with React 19
-  return <SessionProvider>{children}</SessionProvider>;
+  return (
+    // @ts-expect-error SessionProvider type incompatibility with React 19
+    <SessionProvider>{children}</SessionProvider>
+  );
 }
