@@ -40,7 +40,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform to API response format
-    const data: PasswordResetRequest[] = requests.map((req) => ({
+    const data: PasswordResetRequest[] = requests.map((req: typeof requests[0]) => ({
       id: req.id,
       userId: req.userId,
       status: req.status,
