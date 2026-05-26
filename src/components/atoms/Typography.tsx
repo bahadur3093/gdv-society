@@ -22,7 +22,7 @@ export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
   /** Whether text should wrap or not */
   noWrap?: boolean;
   /** Custom HTML element to render as */
-  as?: keyof JSX.IntrinsicElements;
+  as?: React.ElementType;
   /** Custom className for additional styling */
   className?: string;
   /** Typography content */
@@ -30,7 +30,7 @@ export interface TypographyProps extends React.HTMLAttributes<HTMLElement> {
 }
 
 // Element mapping for each variant
-const variantElements: Record<TypographyVariant, keyof JSX.IntrinsicElements> = {
+const variantElements: Record<TypographyVariant, React.ElementType> = {
   h1: 'h1',
   h2: 'h2',
   h3: 'h3',
