@@ -40,18 +40,20 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform to API response format
-    const data: PasswordResetRequest[] = requests.map((req: typeof requests[0]) => ({
-      id: req.id,
-      userId: req.userId,
-      status: req.status,
-      requestedAt: req.requestedAt.toISOString(),
-      approvedAt: req.approvedAt?.toISOString() || null,
-      approvedBy: req.approvedBy,
-      expiresAt: req.expiresAt.toISOString(),
-      token: req.token,
-      user: req.user,
-      approver: req.approver || undefined,
-    }));
+    const data: PasswordResetRequest[] = requests.map((req) => {
+      return {
+        id: req.id,
+        userId: req.userId,
+        status: req.status,
+        requestedAt: req.requestedAt.toISOString(),
+        approvedAt: req.approvedAt?.toISOString() || null,
+        approvedBy: req.approvedBy,
+        expiresAt: req.expiresAt.toISOString(),
+        token: req.token,
+        user: req.user,
+        approver: req.approver || undefined,
+      };
+    });
 
     const response: ApiResponse<PasswordResetRequest[]> = {
       success: true,
