@@ -34,7 +34,20 @@ export default function DashboardPage() {
   // Initialize user data from session
   useEffect(() => {
     if (session?.user) {
+      console.log('[Dashboard] Initializing user from session:', {
+        userId: session.user.id,
+        role: session.user.role,
+        plotNumber: session.user.plotNumber,
+      });
+      
       const plotData = session.user.plotNumber ? getPlotByNumber(session.user.plotNumber) : undefined;
+      
+      console.log('[Dashboard] Plot data lookup result:', {
+        plotNumber: session.user.plotNumber,
+        foundPlotData: !!plotData,
+        plotData: plotData ? { villaNo: plotData.villaNo, areaInSqFt: plotData.areaInSqFt } : null,
+      });
+      
       setCurrentUser({
         id: session.user.id,
         fullName: session.user.name,
@@ -45,10 +58,14 @@ export default function DashboardPage() {
 
       // Set initial screen based on role
       if (session.user.role === 'ADMIN') {
+        console.log('[Dashboard] Setting admin screen: MASTER_LEDGER');
         setActiveScreen(SCREENS.MASTER_LEDGER);
       } else {
+        console.log('[Dashboard] Setting resident screen: DASHBOARD');
         setActiveScreen(SCREENS.DASHBOARD);
       }
+    } else {
+      console.warn('[Dashboard] No session.user found');
     }
   }, [session]);
 
@@ -102,8 +119,15 @@ export default function DashboardPage() {
   }
 
   // Not authenticated
-  if (!session) {
-    return null;
+  if (!session || !session.user) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-slate-400 mb-4">Session not found. Redirecting...</p>
+          <Loader2 className="w-6 h-6 text-violet-500 animate-spin mx-auto" />
+        </div>
+      </div>
+    );
   }
 
   const isAdmin = session.user.role === 'ADMIN';

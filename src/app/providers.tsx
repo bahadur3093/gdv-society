@@ -8,10 +8,9 @@ interface ProvidersProps {
 }
 
 export function Providers({ children }: ProvidersProps) {
-  const Provider = SessionProvider as any;
   return (
-    <Provider session={null} refetchInterval={0}>
+    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
       {children}
-    </Provider>
+    </SessionProvider>
   );
 }

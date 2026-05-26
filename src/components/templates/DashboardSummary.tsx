@@ -11,10 +11,22 @@ interface DashboardSummaryProps {
 }
 
 export default function DashboardSummary({ currentUser, perSqFtRate, fixedBaseAmount }: DashboardSummaryProps) {
+  console.log('[DashboardSummary] Rendering with:', {
+    hasCurrentUser: !!currentUser,
+    hasPlotData: !!currentUser?.plotData,
+    perSqFtRate,
+    fixedBaseAmount,
+  });
+
   if (!currentUser || !currentUser.plotData) {
+    console.warn('[DashboardSummary] Missing user or plot data:', {
+      currentUser,
+      plotData: currentUser?.plotData,
+    });
     return (
       <div className="text-center py-12">
         <p className="text-slate-400">No user data available</p>
+        <p className="text-xs text-slate-500 mt-2">Please contact support if this persists</p>
       </div>
     );
   }
