@@ -1,22 +1,28 @@
 @import "tailwindcss";
 
 @theme {
-  /* Backgrounds & Surfaces */
-  --color-background: #0d1111;
-  --color-surface: #1a1f1f;
-  --color-border: #2a3030;
+  /* New Gemini Design System - Deep Slate Backgrounds */
+  --color-background: #090d16;
+  --color-surface: #0f172a;
+  --color-border: rgba(148, 163, 184, 0.1);
 
-  /* Brand Colors */
-  --color-brand-primary: #2e4d3e;   /* Pathania Green */
-  --color-brand-secondary: #4a6367; /* Glacier Slate */
-  --color-brand-accent: #8b4513;    /* Rust Ember */
+  /* Accent Glow Colors - New Gemini Design System */
+  --color-violet: #8b5cf6;
+  --color-violet-dark: #7c3aed;
+  --color-cyan: #22d3ee;
+  --color-cyan-dark: #06b6d4;
+  --color-indigo: #4f46e5;
+  --color-indigo-dark: #4338ca;
 
   /* Text & Contrast */
-  --color-text-main: #e2e8e4;
+  --color-text-main: #f1f5f9;
   --color-text-muted: #94a3b8;
+  --color-text-dim: #64748b;
   
-  /* Tactical Shadows */
-  --shadow-tactical: 0 4px 14px 0 rgba(0, 0, 0, 0.39);
+  /* Adaptive Depth Layering */
+  --shadow-glow-violet: 0 0 20px rgba(139, 92, 246, 0.3);
+  --shadow-glow-cyan: 0 0 20px rgba(34, 211, 238, 0.3);
+  --shadow-glow-subtle: 0 4px 14px 0 rgba(0, 0, 0, 0.5);
 }
 
 :root {
@@ -28,31 +34,62 @@
   --font-mono: var(--font-jetbrains-mono), ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Monaco, Consolas, 'Courier New', monospace;
 }
 
+/* Scrollbar Styling */
+.scroller-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.scroller-hidden {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 body {
   background-color: var(--color-background);
   color: var(--color-text-main);
   font-family: var(--font-sans);
-  /* Subtle Atmospheric Gradient */
+  /* New Gemini Design System - Ambient Background Mesh Glow */
   background-image: radial-gradient(
-    circle at 0% 0%, 
-    rgba(46, 77, 62, 0.15) 0%, 
+    ellipse at top,
+    rgba(15, 23, 42, 0.5) 0%,
     transparent 50%
   );
+  min-height: 100vh;
 }
 
-/* Component-specific CSS custom properties */
+/* New Gemini Design System - Component-specific CSS */
 .bg-surface { background-color: var(--color-surface); }
 .bg-background { background-color: var(--color-background); }
 .border-border { border-color: var(--color-border); }
 .text-text-main { color: var(--color-text-main); }
 .text-text-muted { color: var(--color-text-muted); }
-.text-brand-primary { color: var(--color-brand-primary); }
-.text-brand-secondary { color: var(--color-brand-secondary); }
-.text-brand-accent { color: var(--color-brand-accent); }
-.bg-brand-primary { background-color: var(--color-brand-primary); }
-.bg-brand-secondary { background-color: var(--color-brand-secondary); }
-.bg-brand-accent { background-color: var(--color-brand-accent); }
-.border-brand-primary { border-color: var(--color-brand-primary); }
-.border-brand-secondary { border-color: var(--color-brand-secondary); }
-.border-brand-accent { border-color: var(--color-brand-accent); }
-.shadow-tactical { box-shadow: var(--shadow-tactical); }
+.text-text-dim { color: var(--color-text-dim); }
+
+/* Accent Glow Colors */
+.text-violet { color: var(--color-violet); }
+.text-cyan { color: var(--color-cyan); }
+.text-indigo { color: var(--color-indigo); }
+.bg-violet { background-color: var(--color-violet); }
+.bg-cyan { background-color: var(--color-cyan); }
+.bg-indigo { background-color: var(--color-indigo); }
+
+/* Interactive Gradient Glows */
+.glow-violet { box-shadow: var(--shadow-glow-violet); }
+.glow-cyan { box-shadow: var(--shadow-glow-cyan); }
+.shadow-subtle { box-shadow: var(--shadow-glow-subtle); }
+
+/* Pulsing Animation for Pending State */
+@keyframes pulse-glow {
+  0%, 100% {
+    opacity: 1;
+    box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+  }
+  50% {
+    opacity: 0.8;
+    box-shadow: 0 0 40px rgba(34, 211, 238, 0.6);
+  }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}

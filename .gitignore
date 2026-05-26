@@ -134,6 +134,10 @@ docs/build/
 *.tar
 *.rar
 
+# Markdown files (except README.md)
+*.md
+!README.md
+
 # AI/ML models (if any)
 *.pkl
 *.h5
@@ -145,3 +149,4 @@ local.config.*
 # Temporary directories
 tmp/
 temp/
+/src/generated/prisma

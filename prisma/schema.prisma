@@ -1,0 +1,203 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// User model for authentication and authorization
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String?   // Nullable to support password reset flow
+  name          String
+  role          UserRole  @default(USER)
+  emailVerified DateTime?
+  plotNumber    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  sessions              Session[]
+  passwordResetRequests PasswordResetRequest[]
+  approvedResetRequests PasswordResetRequest[] @relation("ApprovedBy")
+  residentRequests      ResidentRequest[]
+  familyMembers         FamilyMember[]
+  ledgerEntries         LedgerEntry[]
+
+  @@index([email])
+  @@index([plotNumber])
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+// Session model for NextAuth
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+}
+
+// Password reset request model
+model PasswordResetRequest {
+  id          String      @id @default(cuid())
+  userId      String
+  status      ResetStatus @default(PENDING)
+  requestedAt DateTime    @default(now())
+  approvedAt  DateTime?
+  approvedBy  String?
+  expiresAt   DateTime
+  token       String?     @unique
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  approver User? @relation("ApprovedBy", fields: [approvedBy], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@index([token])
+}
+
+enum ResetStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  EXPIRED
+  DENIED
+}
+
+// Resident request model
+model ResidentRequest {
+  id          String        @id @default(cuid())
+  userId      String
+  plotNumber  String
+  requestType RequestType
+  status      RequestStatus @default(PENDING)
+  description String
+  adminNotes  String?
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Type-specific fields
+  newPlotSize          Int?
+  familyMemberName     String?
+  familyMemberRelation String?
+  familyMemberContact  String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([requestType])
+}
+
+enum RequestType {
+  PLOT_SIZE_UPDATE
+  PAYMENT_ISSUE
+  EXPENSE_SHEET_MONTHLY
+  EXPENSE_SHEET_YEARLY
+  ADD_FAMILY_MEMBER
+  PASSWORD_RESET
+}
+
+enum RequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+// Family member model
+model FamilyMember {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  relationship String
+  contact      String
+  addedAt      DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// Ledger entry model for financial tracking
+model LedgerEntry {
+  id          String         @id @default(cuid())
+  userId      String?
+  date        DateTime
+  description String
+  amount      Float
+  type        TransactionType
+  category    LedgerCategory
+  balance     Float
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([date])
+  @@index([category])
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum LedgerCategory {
+  CORE_OPERATIONS
+  SINKING_FUND
+}
+
+// Society settings model
+model SocietySettings {
+  id                    String   @id @default(cuid())
+  perSqFtRate           Float
+  fixedBaseAmount       Float
+  sinkingFundPercentage Float
+  securityExpense       Float
+  electricityExpense    Float
+  miscExpense           Float
+  cleaningExpense       Float
+  garbageExpense        Float
+  gymExpense            Float
+  stpMaintenanceExpense Float
+  emergencyFundExpense  Float
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
+
+// Villa model for plot/villa data management
+model Villa {
+  id              String   @id @default(cuid())
+  villaNo         Int      @unique
+  type            String
+  areaInSqM       Float
+  ownerName       String
+  areaInSqFt      Float
+  remarks         String?  // Optional field for additional notes
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([villaNo])
+  @@index([ownerName])
+}
