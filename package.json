@@ -7,6 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "postinstall": "prisma generate",
     "db:seed": "dotenv -e .env tsx prisma/seed.ts",
     "db:push": "prisma db push --url=$DATABASE_URL --accept-data-loss",
     "db:sync": "tsx scripts/sync-schema.ts",
