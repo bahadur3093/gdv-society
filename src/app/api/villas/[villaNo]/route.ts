@@ -54,14 +54,10 @@ export async function GET(
       return NextResponse.json(response, { status: HttpStatus.NOT_FOUND });
     }
 
-    // Get total villas count
-    const totalVillas = await prisma.villa.count();
-
     // Calculate expenses
     const expenses = calculateVillaExpenses(
       villa.areaInSqFt,
-      totalVillas,
-      settings
+      Number(settings.perSqFtRate)
     );
 
     const villaWithExpenses = {
@@ -71,10 +67,8 @@ export async function GET(
       ownerName: villa.ownerName,
       areaInSqFt: villa.areaInSqFt,
       remarks: villa.remarks,
-      fixedAmount: expenses.fixedAmount,
-      variableAmount: expenses.variableAmount,
-      hybridTotal: expenses.hybridTotal,
-      flatRate: expenses.flatRate,
+      maintenanceAmount: expenses.maintenanceAmount,
+      perSqFtRate: expenses.perSqFtRate,
     };
 
     const response: ApiResponse = {
@@ -82,11 +76,11 @@ export async function GET(
       data: villaWithExpenses,
     };
     return NextResponse.json(response, { status: HttpStatus.OK });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error fetching villa:', error);
     const response: ApiResponse = {
       success: false,
-      error: error.message || 'Failed to fetch villa',
+      error: error instanceof Error ? error.message : 'Failed to fetch villa',
     };
     return NextResponse.json(response, { status: HttpStatus.INTERNAL_SERVER_ERROR });
   }
