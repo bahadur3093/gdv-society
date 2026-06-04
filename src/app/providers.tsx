@@ -2,6 +2,7 @@
 
 import { SessionProvider } from 'next-auth/react';
 import type { ReactNode } from 'react';
+import StoreProvider from '@/store/StoreProvider';
 
 interface ProvidersProps {
   children: ReactNode;
@@ -9,8 +10,13 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <SessionProvider refetchInterval={0} refetchOnWindowFocus={false}>
-      {children}
-    </SessionProvider>
+    <StoreProvider>
+      <SessionProvider 
+        refetchInterval={0} 
+        refetchOnWindowFocus={false}
+      >
+        {children}
+      </SessionProvider>
+    </StoreProvider>
   );
 }

@@ -2,9 +2,12 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { formatCurrency, formatArea } from '@/utils';
-import { Table, CheckSquare, Square, Edit2, Save, X, ArrowUpDown, Loader2 } from 'lucide-react';
-import { DEFAULT_EXPENSES, TOTAL_VILLAS } from '@/utils/constants';
+import { Table, Edit2, Save, X, ArrowUpDown, Loader2 } from 'lucide-react';
 import type { ApiResponse } from '@/types';
+import ConfirmDialog from '@/components/molecules/ConfirmDialog';
+import Toast from '@/components/atoms/Toast';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchVillas, updateVilla, selectAllVillas, selectVillasLoading, selectVillasError } from '@/store/slices/villasSlice';
 
 interface MasterVillaLedgerProps {
   perSqFtRate: number;
@@ -22,79 +25,42 @@ interface VillaData {
   ownerName: string;
   areaInSqFt: number;
   remarks?: string;
-  fixedAmount: number;
-  variableAmount: number;
-  hybridTotal: number;
-  flatRate: number;
+  maintenanceAmount: number;
+  perSqFtRate: number;
+  sinkingFundAmount: number;
+  totalAmount: number;
 }
 
 export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProps) {
+  // Redux hooks
+  const dispatch = useAppDispatch();
+  const plotData = useAppSelector(selectAllVillas) as VillaData[];
+  const isLoading = useAppSelector(selectVillasLoading);
+  const error = useAppSelector(selectVillasError);
+  
   // State management
-  const [showHybrid, setShowHybrid] = useState(false);
   const [editingCell, setEditingCell] = useState<EditingCell | null>(null);
   const [editValue, setEditValue] = useState('');
-  const [plotData, setPlotData] = useState<VillaData[]>([]);
   const [sortConfig, setSortConfig] = useState<{ key: string; direction: 'asc' | 'desc' } | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   
-  // Common expenses selection state
-  const [selectedExpenses, setSelectedExpenses] = useState({
-    security: true,
-    electricity: true,
-    garbage: false,
-    cleaning: false,
-    misc: false,
-    gym: false,
-    stpMaintenance: false,
-    emergencyFund: false,
+  // Confirmation dialog state
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [pendingUpdate, setPendingUpdate] = useState<{ villaNo: number; data: Partial<VillaData> } | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  
+  // Toast notification state
+  const [toast, setToast] = useState<{ message: string; variant: 'success' | 'error' | 'info' | 'warning'; isVisible: boolean }>({ 
+    message: '', 
+    variant: 'info', 
+    isVisible: false 
   });
 
-  // Fetch villa data from API
+  // Fetch villa data from Redux store
   useEffect(() => {
-    const fetchVillaData = async () => {
-      try {
-        setIsLoading(true);
-        setError(null);
-        
-        const response = await fetch('/api/villas');
-        const result: ApiResponse = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.error || 'Failed to fetch villa data');
-        }
-        
-        setPlotData(result.data as VillaData[]);
-      } catch (err: unknown) {
-        console.error('Error fetching villa data:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load villa data';
-        setError(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    fetchVillaData();
-  }, []);
+    dispatch(fetchVillas());
+  }, [dispatch]);
 
-  // Calculate total common expenses based on selection
-  const totalCommonExpenses = useMemo(() => {
-    let total = 0;
-    if (selectedExpenses.security) total += DEFAULT_EXPENSES.security;
-    if (selectedExpenses.electricity) total += DEFAULT_EXPENSES.electricity;
-    if (selectedExpenses.garbage) total += DEFAULT_EXPENSES.garbage;
-    if (selectedExpenses.cleaning) total += DEFAULT_EXPENSES.cleaning;
-    if (selectedExpenses.misc) total += DEFAULT_EXPENSES.misc;
-    if (selectedExpenses.gym) total += DEFAULT_EXPENSES.gym;
-    if (selectedExpenses.stpMaintenance) total += DEFAULT_EXPENSES.stpMaintenance;
-    if (selectedExpenses.emergencyFund) total += DEFAULT_EXPENSES.emergencyFund;
-    return total;
-  }, [selectedExpenses]);
 
-  // Calculate fixed amount per villa
-  const calculatedFixedAmount = useMemo(() => {
-    return totalCommonExpenses / TOTAL_VILLAS;
-  }, [totalCommonExpenses]);
 
   // Sorting functionality
   const handleSort = (key: string) => {
@@ -118,17 +84,9 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
           aValue = a.areaInSqFt;
           bValue = b.areaInSqFt;
           break;
-        case 'hybrid':
-          aValue = a.hybridTotal;
-          bValue = b.hybridTotal;
-          break;
-        case 'flat':
-          aValue = a.flatRate;
-          bValue = b.flatRate;
-          break;
-        case 'variable':
-          aValue = a.variableAmount;
-          bValue = b.variableAmount;
+        case 'maintenance':
+          aValue = a.maintenanceAmount;
+          bValue = b.maintenanceAmount;
           break;
         default:
           return 0;
@@ -142,45 +100,94 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
     return sorted;
   }, [plotData, sortConfig]);
 
-  // Filter out unoccupied plots for display
-  const occupiedPlots = sortedPlotData.filter(
-    (plot) => plot.ownerName !== 'Not Occupied' && plot.ownerName !== '(No name)'
-  );
-
   // Handle cell edit
   const handleEditCell = (villaNo: number, field: 'ownerName' | 'areaInSqFt' | 'remarks', currentValue: string | number) => {
     setEditingCell({ villaNo, field });
     setEditValue(String(currentValue));
   };
 
-  // Handle save cell
+  // Handle save cell - prepare update and show confirmation
   const handleSaveCell = () => {
     if (!editingCell) return;
     
-    setPlotData(prevData =>
-      prevData.map(plot => {
-        if (plot.villaNo === editingCell.villaNo) {
-          const updatedPlot = { ...plot };
-          
-          if (editingCell.field === 'areaInSqFt') {
-            const newArea = parseFloat(editValue) || plot.areaInSqFt;
-            updatedPlot.areaInSqFt = newArea;
-            // Recalculate variable amount and totals
-            updatedPlot.variableAmount = newArea * perSqFtRate;
-            updatedPlot.hybridTotal = calculatedFixedAmount + updatedPlot.variableAmount;
-            updatedPlot.flatRate = newArea * perSqFtRate;
-          } else {
-            updatedPlot[editingCell.field] = editValue;
-          }
-          
-          return updatedPlot;
-        }
-        return plot;
-      })
-    );
+    const plot = plotData.find(p => p.villaNo === editingCell.villaNo);
+    if (!plot) return;
     
-    setEditingCell(null);
-    setEditValue('');
+    // Prepare the update data
+    const updateData: Partial<VillaData> = {};
+    
+    if (editingCell.field === 'areaInSqFt') {
+      const newArea = parseFloat(editValue);
+      if (isNaN(newArea) || newArea <= 0) {
+        setToast({ 
+          message: 'Please enter a valid area value', 
+          variant: 'error', 
+          isVisible: true 
+        });
+        return;
+      }
+      updateData.areaInSqFt = newArea;
+      // Calculate areaInSqM (1 sqft = 0.092903 sqm)
+      updateData.areaInSqM = newArea * 0.092903;
+    } else if (editingCell.field === 'ownerName') {
+      if (!editValue.trim()) {
+        setToast({ 
+          message: 'Owner name cannot be empty', 
+          variant: 'error', 
+          isVisible: true 
+        });
+        return;
+      }
+      updateData.ownerName = editValue.trim();
+    } else if (editingCell.field === 'remarks') {
+      updateData.remarks = editValue.trim();
+    }
+    
+    // Store pending update and show confirmation dialog
+    setPendingUpdate({ villaNo: plot.villaNo, data: updateData });
+    setShowConfirmDialog(true);
+    // Set saving state to show loader in confirmation dialog
+    setIsSaving(false); // Reset to false initially, will be set to true on confirm
+  };
+  
+  // Confirm and execute the update
+  const handleConfirmUpdate = async () => {
+    if (!pendingUpdate) return;
+    
+    setIsSaving(true);
+    
+    try {
+      // Dispatch Redux action to update villa
+      const result = await dispatch(updateVilla({
+        villaNo: pendingUpdate.villaNo,
+        data: pendingUpdate.data
+      })).unwrap();
+      
+      // Refresh all villas data to ensure store is fully synced with latest API data
+      await dispatch(fetchVillas()).unwrap();
+      
+      // Show success toast
+      setToast({ 
+        message: `Villa #${pendingUpdate.villaNo} updated successfully`, 
+        variant: 'success', 
+        isVisible: true 
+      });
+      
+      // Clear editing state
+      setEditingCell(null);
+      setEditValue('');
+    } catch (error) {
+      console.error('Error updating villa:', error);
+      setToast({ 
+        message: error instanceof Error ? error.message : 'Failed to update villa', 
+        variant: 'error', 
+        isVisible: true 
+      });
+    } finally {
+      setIsSaving(false);
+      setShowConfirmDialog(false);
+      setPendingUpdate(null);
+    }
   };
 
   // Handle cancel edit
@@ -189,15 +196,10 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
     setEditValue('');
   };
 
-  // Toggle expense selection
-  const toggleExpense = (expense: keyof typeof selectedExpenses) => {
-    setSelectedExpenses(prev => ({
-      ...prev,
-      [expense]: !prev[expense]
-    }));
-  };
+
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
@@ -228,46 +230,7 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
       {/* Main Content - Only show when not loading */}
       {!isLoading && !error && (
       <>
-      {/* Common Expenses Selection Panel */}
-      <div className="bg-gradient-to-br from-indigo-900/20 to-violet-900/20 border border-indigo-800/40 rounded-lg p-6">
-        <h4 className="text-sm font-semibold text-slate-100 mb-3">Select Common Expenses for Fixed Amount Calculation</h4>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {Object.entries(DEFAULT_EXPENSES).map(([key, amount]) => {
-            const isSelected = selectedExpenses[key as keyof typeof selectedExpenses];
-            const label = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-            
-            return (
-              <button
-                key={key}
-                onClick={() => toggleExpense(key as keyof typeof selectedExpenses)}
-                className={`flex items-center gap-2 p-3 rounded-lg border transition-all ${
-                  isSelected
-                    ? 'bg-indigo-900/40 border-indigo-600/60 text-slate-100'
-                    : 'bg-slate-900/20 border-slate-800/40 text-slate-400 hover:bg-slate-800/30'
-                }`}
-              >
-                {isSelected ? (
-                  <CheckSquare className="w-4 h-4 text-indigo-400" />
-                ) : (
-                  <Square className="w-4 h-4" />
-                )}
-                <div className="flex-1 text-left">
-                  <p className="text-xs font-medium">{label}</p>
-                  <p className="text-xs font-mono text-slate-400">{formatCurrency(amount)}</p>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        <div className="mt-4 flex items-center justify-between bg-slate-900/40 rounded-lg p-4 border border-slate-800/40">
-          <span className="text-sm text-slate-300">Total Common Expenses (Monthly)</span>
-          <span className="text-lg font-bold font-mono text-indigo-400">{formatCurrency(totalCommonExpenses)}</span>
-        </div>
-        <div className="mt-2 flex items-center justify-between bg-indigo-900/30 rounded-lg p-4 border border-indigo-700/40">
-          <span className="text-sm text-slate-300">Fixed Amount per Villa ({TOTAL_VILLAS} villas)</span>
-          <span className="text-lg font-bold font-mono text-violet-400">{formatCurrency(calculatedFixedAmount)}</span>
-        </div>
-      </div>
+
 
       <div className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-4">
         <h3 className="text-sm font-semibold text-slate-100 mb-3">Plot Type Legends</h3>
@@ -283,34 +246,7 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
         </div>
       </div>
 
-      {/* Rate Display Toggle */}
-      <div className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-4">
-        <div className="flex items-center justify-between">
-          <span className="text-sm text-slate-300">Display Rate Type</span>
-          <div className="flex items-center gap-3">
-            <button
-              onClick={() => setShowHybrid(true)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                showHybrid
-                  ? 'bg-violet-600 text-white'
-                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
-              }`}
-            >
-              Hybrid Rate
-            </button>
-            <button
-              onClick={() => setShowHybrid(false)}
-              className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                !showHybrid
-                  ? 'bg-cyan-600 text-white'
-                  : 'bg-slate-800/50 text-slate-400 hover:bg-slate-800'
-              }`}
-            >
-              Flat Rate
-            </button>
-          </div>
-        </div>
-      </div>
+
 
       {/* Data Table - Editable */}
       <div className="bg-slate-900/30 border border-slate-800/40 rounded-lg overflow-hidden">
@@ -333,25 +269,12 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
                     <ArrowUpDown className="w-3 h-3" />
                   </button>
                 </th>
-                {showHybrid && (
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-slate-300 whitespace-nowrap">
-                    <button
-                      onClick={() => handleSort('variable')}
-                      className="flex items-center gap-1 hover:text-indigo-400 transition-colors"
-                    >
-                      Variable
-                      <ArrowUpDown className="w-3 h-3" />
-                    </button>
-                  </th>
-                )}
-                <th className={`text-left py-3 px-4 text-sm font-semibold whitespace-nowrap ${
-                  showHybrid ? 'text-violet-400' : 'text-cyan-400'
-                }`}>
+                <th className="text-left py-3 px-4 text-sm font-semibold text-cyan-400 whitespace-nowrap">
                   <button
-                    onClick={() => handleSort(showHybrid ? 'hybrid' : 'flat')}
+                    onClick={() => handleSort('maintenance')}
                     className="flex items-center gap-1 hover:text-indigo-400 transition-colors"
                   >
-                    {showHybrid ? 'Hybrid Total' : 'Flat Rate'}
+                    Maintenance Amount
                     <ArrowUpDown className="w-3 h-3" />
                   </button>
                 </th>
@@ -364,18 +287,22 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
         {sortedPlotData.map((plot) => {
           const isEditingOwner = editingCell?.villaNo === plot.villaNo && editingCell?.field === 'ownerName';
           const isEditingArea = editingCell?.villaNo === plot.villaNo && editingCell?.field === 'areaInSqFt';
-          const isEditingRemarks = editingCell?.villaNo === plot.villaNo && editingCell?.field === 'remarks';
                 
                 // Determine if plot is odd/irregular based on type or remarks
                 const isOddPlot = plot.type?.toLowerCase().includes('odd') || 
                                   plot.type?.toLowerCase().includes('common') ||
                                   plot.remarks?.toLowerCase().includes('corner') ||
                                   plot.remarks?.toLowerCase().includes('irregular');
+                const notOccupiedPlots = plot.ownerName === 'Not Occupied';  
                 
                 const rowColorClass = isOddPlot 
                   ? 'bg-violet-900/10 hover:bg-violet-800/20 border-violet-800/20' 
                   : 'hover:bg-slate-800/30';
-                
+
+                const notOccupiedClass = notOccupiedPlots 
+                  ? 'text-red-900'
+                  : '';
+
                 const stickyBgClass = isOddPlot
                   ? 'bg-violet-900/10'
                   : 'bg-slate-950';
@@ -385,7 +312,7 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
                 key={plot.villaNo}
                 className={`border-b border-slate-800/20 transition-colors ${rowColorClass}`}
               >
-                <td className={`sticky left-0 ${stickyBgClass} z-10 py-3 px-4 text-sm font-semibold text-indigo-400`}>
+                <td className={`sticky left-0 ${stickyBgClass} z-10 py-3 px-4 text-sm font-semibold ${notOccupiedClass} text-indigo-400`}>
                   #{plot.villaNo}
                 </td>
                     
@@ -396,13 +323,13 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
                           type="text"
                           value={editValue}
                           onChange={(e) => setEditValue(e.target.value)}
-                          className="bg-slate-800 border border-indigo-600 rounded px-2 py-1 text-sm text-slate-100 w-full"
+                          className={`bg-slate-800 border border-indigo-600 rounded px-2 py-1 text-sm text-slate-100 w-full`}
                           autoFocus
                         />
                   ) : (
                     <span
                       onClick={() => handleEditCell(plot.villaNo, 'ownerName', plot.ownerName)}
-                      className="cursor-pointer hover:text-indigo-400 transition-colors"
+                      className={`cursor-pointer hover:text-indigo-400 transition-colors ${notOccupiedClass}`}
                     >
                       {plot.ownerName}
                         </span>
@@ -410,7 +337,7 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
                     </td>
                     
                     {/* Editable Area */}
-                    <td className="py-3 px-4 text-sm text-left font-mono text-slate-300 whitespace-nowrap">
+                    <td className={`py-3 px-4 text-sm text-left font-mono ${notOccupiedClass} text-slate-300 whitespace-nowrap `}>
                       {isEditingArea ? (
                         <input
                           type="number"
@@ -423,25 +350,16 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
                   ) : (
                     <span
                       onClick={() => handleEditCell(plot.villaNo, 'areaInSqFt', plot.areaInSqFt)}
-                      className="cursor-pointer hover:text-indigo-400 transition-colors"
+                      className={`cursor-pointer hover:text-indigo-400 transition-colors ${notOccupiedClass}`}
                     >
                       {formatArea(plot.areaInSqFt)}
                         </span>
                       )}
                     </td>
                     
-                    {/* Variable Amount (Auto-calculated) - Only show when Hybrid is selected */}
-                    {showHybrid && (
-                      <td className="py-3 px-4 text-sm text-left font-mono text-slate-300 whitespace-nowrap">
-                        {formatCurrency(plot.variableAmount)}
-                      </td>
-                    )}
-                    
-                    {/* Hybrid or Flat Rate (Based on Toggle) */}
-                    <td className={`py-3 px-4 text-sm text-left font-mono font-semibold whitespace-nowrap ${
-                      showHybrid ? 'text-violet-400' : 'text-cyan-400'
-                    }`}>
-                      {formatCurrency(showHybrid ? plot.hybridTotal : plot.flatRate)}
+                    {/* Maintenance Amount */}
+                    <td className={`py-3 px-4 text-sm text-left font-mono font-semibold ${notOccupiedClass} text-cyan-400 whitespace-nowrap`}>
+                      {formatCurrency(plot.maintenanceAmount)}
                     </td>
                     
                 {/* Action Buttons */}
@@ -450,14 +368,20 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={handleSaveCell}
-                            className="p-1 rounded bg-green-600 hover:bg-green-700 transition-colors"
+                            disabled={isSaving}
+                            className="p-1 rounded bg-green-600 hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Save"
                           >
-                            <Save className="w-4 h-4 text-white" />
+                            {isSaving && showConfirmDialog ? (
+                              <Loader2 className="w-4 h-4 text-white animate-spin" />
+                            ) : (
+                              <Save className="w-4 h-4 text-white" />
+                            )}
                           </button>
                           <button
                             onClick={handleCancelEdit}
-                            className="p-1 rounded bg-red-600 hover:bg-red-700 transition-colors"
+                            disabled={isSaving}
+                            className="p-1 rounded bg-red-600 hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                             title="Cancel"
                           >
                             <X className="w-4 h-4 text-white" />
@@ -466,7 +390,8 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
                   ) : (
                     <button
                       onClick={() => handleEditCell(plot.villaNo, 'ownerName', plot.ownerName)}
-                      className="p-1 rounded bg-slate-800 hover:bg-indigo-600 transition-colors"
+                      disabled={isSaving}
+                      className="p-1 rounded bg-slate-800 hover:bg-indigo-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title="Edit Row"
                     >
                           <Edit2 className="w-4 h-4 text-slate-400" />
@@ -482,6 +407,34 @@ export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProp
       </div>
       </>
       )}
+      
+      {/* Confirmation Dialog */}
+      <ConfirmDialog
+        isOpen={showConfirmDialog}
+        onClose={() => {
+          if (!isSaving) {
+            setShowConfirmDialog(false);
+            setPendingUpdate(null);
+          }
+        }}
+        onConfirm={handleConfirmUpdate}
+        title="Confirm Villa Update"
+        message={`Are you sure you want to update Villa #${pendingUpdate?.villaNo}? This will save the changes to the database.`}
+        confirmText="Update Villa"
+        cancelText="Cancel"
+        variant="info"
+        loading={isSaving}
+      />
+      
+      {/* Toast Notification */}
+      <Toast
+        message={toast.message}
+        variant={toast.variant}
+        isVisible={toast.isVisible}
+        onClose={() => setToast({ ...toast, isVisible: false })}
+        duration={3000}
+      />
     </div>
+    </>
   );
 }

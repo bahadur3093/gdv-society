@@ -12,11 +12,11 @@ export type { DbUser, DbSession, DbPasswordResetRequest, DbResidentRequest, DbFa
 
 // Application State Types
 export type AccountStatus = 'pending' | 'approved';
-export type ScreenType = 'auth' | 'pending' | 'dashboard' | 'ledger' | 'breakdown' | 'master-ledger' | 'onboarding' | 'settings' | 'requests' | 'admin-requests' | 'user-management' | 'plot-layout';
+export type ScreenType = 'auth' | 'pending' | 'dashboard' | 'ledger' | 'breakdown' | 'master-ledger' | 'onboarding' | 'settings' | 'requests' | 'admin-requests' | 'user-management' | 'plot-layout' | 'config-management' | 'expense-manager';
 
 // Request Types
 export type RequestType = 'PLOT_SIZE_UPDATE' | 'PAYMENT_ISSUE' | 'EXPENSE_SHEET_MONTHLY' | 'EXPENSE_SHEET_YEARLY' | 'ADD_FAMILY_MEMBER' | 'PASSWORD_RESET';
-export type RequestStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type RequestStatus = 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'REJECTED' | 'REOPENED';
 
 export interface ResidentRequest {
   id: string;
@@ -29,6 +29,11 @@ export interface ResidentRequest {
   createdAt: string;
   updatedAt?: string;
   adminNotes?: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  lastResidentReplyAt?: string;
+  reopenedAt?: string;
+  reopenCount?: number;
   // Type-specific fields
   newPlotSize?: number;
   familyMemberDetails?: {
@@ -36,6 +41,19 @@ export interface ResidentRequest {
     relationship: string;
     contact: string;
   };
+}
+
+// Request Comment Types
+export interface RequestComment {
+  id: string;
+  requestId: string;
+  authorId: string;
+  authorName: string;
+  authorRole: 'USER' | 'ADMIN';
+  content: string;
+  isAdminComment: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 // Application State Interface
@@ -125,4 +143,20 @@ export interface FamilyMember {
   relationship: string;
   contact: string;
   addedAt: string;
+}
+
+// App Configuration Types
+export interface AppConfigItem {
+  value: string;
+  label: string;
+  icon: string;
+  description: string;
+  enable: boolean;
+}
+
+export interface AppConfig {
+  id: number;
+  config_key: string;
+  config_value: AppConfigItem[];
+  updated_at: string;
 }

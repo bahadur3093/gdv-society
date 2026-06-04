@@ -5,10 +5,16 @@
  * @returns Formatted currency string
  */
 export const formatCurrency = (amount: number, showSymbol: boolean = true): string => {
+  // Handle null/undefined values
+  if (amount === null || amount === undefined || isNaN(amount)) {
+    return showSymbol ? '₹0.00' : '0.00';
+  }
+
   const formatted = amount.toLocaleString('en-IN', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+
   return showSymbol ? `₹${formatted}` : formatted;
 };
 

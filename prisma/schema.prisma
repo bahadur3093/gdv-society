@@ -26,6 +26,7 @@ model User {
   passwordResetRequests PasswordResetRequest[]
   approvedResetRequests PasswordResetRequest[] @relation("ApprovedBy")
   residentRequests      ResidentRequest[]
+  requestComments       RequestComment[]       @relation("CommentAuthor")
   familyMembers         FamilyMember[]
   ledgerEntries         LedgerEntry[]
 
@@ -82,7 +83,7 @@ enum ResetStatus {
   DENIED
 }
 
-// Resident request model
+// Resident request model with auto-resolution support
 model ResidentRequest {
   id          String        @id @default(cuid())
   userId      String
@@ -93,6 +94,11 @@ model ResidentRequest {
   adminNotes  String?
   createdAt   DateTime      @default(now())
   updatedAt   DateTime      @updatedAt
+  resolvedAt  DateTime?     // When the request was resolved
+  resolvedBy  String?       // User ID who resolved it (admin or resident)
+  lastResidentReplyAt DateTime? // Track last resident reply for auto-resolution
+  reopenedAt  DateTime?     // Track if request was reopened
+  reopenCount Int          @default(0) // Track number of times reopened
 
   // Type-specific fields
   newPlotSize          Int?
@@ -100,11 +106,31 @@ model ResidentRequest {
   familyMemberRelation String?
   familyMemberContact  String?
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  comments RequestComment[]
 
   @@index([userId])
   @@index([status])
   @@index([requestType])
+  @@index([lastResidentReplyAt])
+}
+
+// Request comment model for admin-resident communication
+model RequestComment {
+  id        String   @id @default(cuid())
+  requestId String
+  authorId  String
+  content   String
+  isAdminComment Boolean @default(false) // Track if comment is from admin
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  request ResidentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+  author  User            @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([authorId])
+  @@index([createdAt])
 }
 
 enum RequestType {
@@ -118,8 +144,10 @@ enum RequestType {
 
 enum RequestStatus {
   PENDING
-  APPROVED
+  IN_PROGRESS
+  RESOLVED
   REJECTED
+  REOPENED
 }
 
 // Family member model
@@ -172,16 +200,8 @@ enum LedgerCategory {
 model SocietySettings {
   id                    String   @id @default(cuid())
   perSqFtRate           Float
-  fixedBaseAmount       Float
   sinkingFundPercentage Float
-  securityExpense       Float
-  electricityExpense    Float
-  miscExpense           Float
-  cleaningExpense       Float
-  garbageExpense        Float
-  gymExpense            Float
-  stpMaintenanceExpense Float
-  emergencyFundExpense  Float
+  totalVillas           Int      @default(47)
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
 }
@@ -201,3 +221,31 @@ model Villa {
   @@index([villaNo])
   @@index([ownerName])
 }
+
+// App Configuration model for storing application settings
+model AppConfig {
+  id           Int      @id @default(autoincrement())
+  configKey    String   @unique @map("config_key")
+  configValue  Json     @map("config_value")
+  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@map("app_config")
+  @@index([configKey])
+}
+
+// Monthly Expense model for tracking community expenses
+model MonthlyExpense {
+  id          String   @id @default(cuid())
+  month       Int      // 1-12
+  year        Int
+  category    String   // e.g., "Security", "Electricity", "Cleaning"
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([month, year, category])
+  @@index([month, year])
+  @@index([category])
+}
+

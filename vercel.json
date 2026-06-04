@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/auto-resolve-requests",
+      "schedule": "0 0 * * *"
+    }
+  ]
+}

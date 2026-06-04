@@ -1,10 +1,9 @@
 'use client';
 
 import { ScreenType, PendingRegistration, ResidentRequest } from '@/types';
-import { Table, UserPlus, Settings, FileText, Menu, X, LogOut, Users, Map } from 'lucide-react';
+import { Table, UserPlus, Settings, FileText, Menu, X, LogOut, Users, Map, Database } from 'lucide-react';
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { SCREENS } from '@/utils';
 
 // Import screen components
@@ -14,16 +13,18 @@ import SocietyFinancialSettings from '@/components/templates/SocietyFinancialSet
 import AdminRequestManagement from '@/components/templates/AdminRequestManagement';
 import AdminUserManagement from '@/components/templates/AdminUserManagement';
 import PlotLayoutMap from '@/components/templates/PlotLayoutMap';
+import ConfigManagement from '@/components/templates/ConfigManagement';
+import ExpenseManager from '@/components/templates/ExpenseManager';
 
 interface AdministrativeWorkspaceProps {
   activeScreen: ScreenType;
   onScreenChange: (screen: ScreenType) => void;
   perSqFtRate: number;
-  fixedBaseAmount: number;
   sinkingFundPercentage: number;
+  totalVillas: number;
   onUpdatePerSqFtRate: (rate: number) => void;
-  onUpdateFixedBase: (amount: number) => void;
   onUpdateSinkingFund: (percentage: number) => void;
+  onUpdateTotalVillas: (total: number) => void;
   pendingRegistrations: PendingRegistration[];
   onApproveRegistration: (id: string) => void;
   onDeclineRegistration: (id: string) => void;
@@ -38,6 +39,8 @@ const navItems = [
   { id: SCREENS.USER_MANAGEMENT, label: 'User Management', icon: Users },
   { id: SCREENS.SETTINGS, label: 'Settings', icon: Settings },
   { id: SCREENS.ADMIN_REQUESTS, label: 'Requests', icon: FileText },
+  { id: SCREENS.CONFIG_MANAGEMENT, label: 'Config Management', icon: Database },
+  { id: SCREENS.EXPENSE_MANAGER, label: 'Expense Manager', icon: Database },
   { id: SCREENS.PLOT_LAYOUT, label: 'Plot Layout Map', icon: Map },
 ];
 
@@ -45,11 +48,11 @@ export default function AdministrativeWorkspace({
   activeScreen,
   onScreenChange,
   perSqFtRate,
-  fixedBaseAmount,
   sinkingFundPercentage,
+  totalVillas,
   onUpdatePerSqFtRate,
-  onUpdateFixedBase,
   onUpdateSinkingFund,
+  onUpdateTotalVillas,
   pendingRegistrations,
   onApproveRegistration,
   onDeclineRegistration,
@@ -58,7 +61,6 @@ export default function AdministrativeWorkspace({
   onRejectRequest,
 }: AdministrativeWorkspaceProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const router = useRouter();
 
   const renderContent = () => {
     switch (activeScreen) {
@@ -84,11 +86,11 @@ export default function AdministrativeWorkspace({
         return (
           <SocietyFinancialSettings
             perSqFtRate={perSqFtRate}
-            fixedBaseAmount={fixedBaseAmount}
             sinkingFundPercentage={sinkingFundPercentage}
+            totalVillas={totalVillas}
             onUpdatePerSqFtRate={onUpdatePerSqFtRate}
-            onUpdateFixedBase={onUpdateFixedBase}
             onUpdateSinkingFund={onUpdateSinkingFund}
+            onUpdateTotalVillas={onUpdateTotalVillas}
           />
         );
       case SCREENS.ADMIN_REQUESTS:
@@ -99,7 +101,11 @@ export default function AdministrativeWorkspace({
             onRejectRequest={onRejectRequest}
           />
         );
-        case SCREENS.PLOT_LAYOUT:
+      case SCREENS.CONFIG_MANAGEMENT:
+        return <ConfigManagement />;
+      case SCREENS.EXPENSE_MANAGER:
+        return <ExpenseManager isAdmin={true} />;
+      case SCREENS.PLOT_LAYOUT:
         return <PlotLayoutMap userRole="admin" />;
       default:
         return null;
@@ -126,7 +132,7 @@ export default function AdministrativeWorkspace({
           mobileMenuOpen ? 'block' : 'hidden'
         } lg:block lg:w-64 bg-slate-900/30 border-r border-slate-800/40 lg:min-h-screen transition-all duration-300 ease-in-out`}
       >
-        <div className="p-6">
+        <div className="p-6 sticky top-0">
           <div className="hidden lg:block mb-8">
             <h1 className="text-2xl font-bold text-slate-100 mb-1">Admin Portal</h1>
             <p className="text-sm text-slate-400">Management Dashboard</p>

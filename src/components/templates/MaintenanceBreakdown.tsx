@@ -7,13 +7,11 @@ import { Calculator, TrendingUp, DollarSign } from 'lucide-react';
 interface MaintenanceBreakdownProps {
   currentUser?: ResidentUser;
   perSqFtRate: number;
-  fixedBaseAmount: number;
 }
 
 export default function MaintenanceBreakdown({
   currentUser,
   perSqFtRate,
-  fixedBaseAmount,
 }: MaintenanceBreakdownProps) {
   if (!currentUser || !currentUser.plotData) {
     return (
@@ -24,11 +22,7 @@ export default function MaintenanceBreakdown({
   }
 
   const { plotData } = currentUser;
-  const breakdown = getMaintenanceBreakdown(
-    plotData.areaInSqFt,
-    fixedBaseAmount,
-    perSqFtRate
-  );
+  const monthlyMaintenance = plotData.areaInSqFt * perSqFtRate;
 
   return (
     <div className="space-y-6">
@@ -71,31 +65,22 @@ export default function MaintenanceBreakdown({
         <div className="space-y-4">
           <div className="flex items-center justify-between py-3 border-b border-slate-800/40">
             <div>
-              <p className="text-sm text-slate-300">Fixed Base Amount</p>
-              <p className="text-xs text-slate-500">Common expenses shared equally</p>
-            </div>
-            <p className="text-xl font-bold font-mono text-slate-100">
-              {formatCurrency(breakdown.fixedBase)}
-            </p>
-          </div>
-          <div className="flex items-center justify-between py-3 border-b border-slate-800/40">
-            <div>
-              <p className="text-sm text-slate-300">Variable Amount</p>
+              <p className="text-sm text-slate-300">Maintenance Calculation</p>
               <p className="text-xs text-slate-500">
-                {formatArea(breakdown.plotSize)} × {formatCurrency(breakdown.variableRate, true)}/Sq.ft
+                {formatArea(plotData.areaInSqFt)} × {formatCurrency(perSqFtRate, true)}/Sq.ft
               </p>
             </div>
             <p className="text-xl font-bold font-mono text-slate-100">
-              {formatCurrency(breakdown.plotSize * breakdown.variableRate)}
+              {formatCurrency(monthlyMaintenance)}
             </p>
           </div>
           <div className="flex items-center justify-between py-4 bg-violet-600/20 rounded-lg px-4">
             <div>
               <p className="text-base font-semibold text-violet-300">Total Monthly Dues</p>
-              <p className="text-xs text-slate-400">Fixed Base + Variable Amount</p>
+              <p className="text-xs text-slate-400">Based on plot size</p>
             </div>
             <p className="text-3xl font-bold font-mono text-violet-400">
-              {formatCurrency(breakdown.hybridTotal)}
+              {formatCurrency(monthlyMaintenance)}
             </p>
           </div>
         </div>
@@ -114,7 +99,7 @@ export default function MaintenanceBreakdown({
               <p className="text-xs text-slate-500">Current rate</p>
             </div>
             <p className="text-xl font-bold font-mono text-slate-100">
-              {formatCurrency(breakdown.hybridTotal)}
+              {formatCurrency(monthlyMaintenance)}
             </p>
           </div>
           <div className="flex items-center justify-between py-4 bg-cyan-600/20 rounded-lg px-4">
@@ -123,7 +108,7 @@ export default function MaintenanceBreakdown({
               <p className="text-xs text-slate-400">Monthly × 12 months</p>
             </div>
             <p className="text-3xl font-bold font-mono text-cyan-400">
-              {formatCurrency(breakdown.hybridTotal * 12)}
+              {formatCurrency(monthlyMaintenance * 12)}
             </p>
           </div>
         </div>
@@ -136,26 +121,25 @@ export default function MaintenanceBreakdown({
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-300">Monthly Dues</p>
             <p className="text-lg font-bold font-mono text-violet-400">
-              {formatCurrency(breakdown.hybridTotal)}
+              {formatCurrency(monthlyMaintenance)}
             </p>
           </div>
           <div className="flex items-center justify-between">
             <p className="text-sm text-slate-300">Quarterly Payment</p>
             <p className="text-lg font-bold font-mono text-cyan-400">
-              {formatCurrency(breakdown.hybridTotal * 3)}
+              {formatCurrency(monthlyMaintenance * 3)}
             </p>
           </div>
           <div className="flex items-center justify-between pt-3 border-t border-slate-800/40">
             <p className="text-sm font-semibold text-slate-200">Annual Payment</p>
             <p className="text-lg font-bold font-mono text-indigo-400">
-              {formatCurrency(breakdown.hybridTotal * 12)}
+              {formatCurrency(monthlyMaintenance * 12)}
             </p>
           </div>
         </div>
         <div className="mt-4 p-4 bg-slate-900/50 rounded-lg">
           <p className="text-xs text-slate-400">
-            <strong>Note:</strong> Your maintenance fee is calculated using the society's hybrid model, 
-            which combines a fixed base amount (common expenses) with a variable component based on your plot size. 
+            <strong>Note:</strong> Your maintenance fee is calculated based on your plot size multiplied by the per square foot rate set by the society. 
             For questions about the calculation method, please contact the management committee.
           </p>
         </div>

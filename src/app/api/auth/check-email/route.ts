@@ -52,8 +52,12 @@ export async function POST(request: NextRequest) {
     console.error('Check email error:', error);
 
     // Handle validation errors
-    if (error.statusCode === 400) {
-      return NextResponse.json(error, { status: HttpStatus.BAD_REQUEST });
+    if (error.statusCode === HttpStatus.BAD_REQUEST) {
+      const response: ApiResponse = {
+        success: false,
+        error: error.message || 'Validation failed',
+      };
+      return NextResponse.json(response, { status: HttpStatus.BAD_REQUEST });
     }
 
     // Handle other errors

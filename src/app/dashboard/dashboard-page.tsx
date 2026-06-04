@@ -4,25 +4,38 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useCallback, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { ScreenType, ResidentUser, PendingRegistration, ResidentRequest } from '@/types';
-import { DEFAULT_PER_SQFT_RATE, DEFAULT_FIXED_BASE_AMOUNT, DEFAULT_SINKING_FUND_PERCENTAGE, SCREENS } from '@/utils';
+import { ScreenType, ResidentUser, PendingRegistration, ResidentRequest, RequestStatus } from '@/types';
+import { DEFAULT_PER_SQFT_RATE, DEFAULT_SINKING_FUND_PERCENTAGE, SCREENS } from '@/utils';
 import { getPlotByNumber } from '@/data/plots';
 import ResidentWorkspace from '@/components/organisms/ResidentWorkspace';
 import AdministrativeWorkspace from '@/components/organisms/AdministrativeWorkspace';
-import DevSwitch from '@/components/molecules/DevSwitch';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
+import { fetchSocietySettings, selectSocietySettings, selectSocietySettingsLoading } from '@/store/slices/societySettingsSlice';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  
+  // Redux hooks
+  const dispatch = useAppDispatch();
+  const settings = useAppSelector(selectSocietySettings);
+  const isLoadingSettings = useAppSelector(selectSocietySettingsLoading);
 
   // Global Application State
   const [activeScreen, setActiveScreen] = useState<ScreenType>(SCREENS.DASHBOARD);
-  const [perSqFtRate, setPerSqFtRate] = useState<number>(DEFAULT_PER_SQFT_RATE);
-  const [fixedBaseAmount, setFixedBaseAmount] = useState<number>(DEFAULT_FIXED_BASE_AMOUNT);
-  const [sinkingFundPercentage, setSinkingFundPercentage] = useState<number>(DEFAULT_SINKING_FUND_PERCENTAGE);
   const [currentUser, setCurrentUser] = useState<ResidentUser | undefined>(undefined);
   const [pendingRegistrations, setPendingRegistrations] = useState<PendingRegistration[]>([]);
   const [residentRequests, setResidentRequests] = useState<ResidentRequest[]>([]);
+  
+  // Get society settings from Redux store with fallback to defaults
+  const perSqFtRate = settings?.perSqFtRate ?? DEFAULT_PER_SQFT_RATE;
+  const sinkingFundPercentage = settings?.sinkingFundPercentage ?? DEFAULT_SINKING_FUND_PERCENTAGE;
+  const totalVillas = settings?.totalVillas ?? 47;
+
+  // Fetch society settings from Redux store on mount
+  useEffect(() => {
+    dispatch(fetchSocietySettings());
+  }, [dispatch]);
 
   // Redirect to signin if not authenticated
   useEffect(() => {
@@ -33,40 +46,42 @@ export default function DashboardPage() {
 
   // Initialize user data from session
   useEffect(() => {
-    if (session?.user) {
-      console.log('[Dashboard] Initializing user from session:', {
-        userId: session.user.id,
-        role: session.user.role,
-        plotNumber: session.user.plotNumber,
-      });
-      
-      const plotData = session.user.plotNumber ? getPlotByNumber(session.user.plotNumber) : undefined;
-      
-      console.log('[Dashboard] Plot data lookup result:', {
-        plotNumber: session.user.plotNumber,
-        foundPlotData: !!plotData,
-        plotData: plotData ? { villaNo: plotData.villaNo, areaInSqFt: plotData.areaInSqFt } : null,
-      });
-      
-      setCurrentUser({
-        id: session.user.id,
-        fullName: session.user.name,
-        email: session.user.email,
-        plotNumber: session.user.plotNumber || '',
-        plotData,
-      });
-
-      // Set initial screen based on role
-      if (session.user.role === 'ADMIN') {
-        console.log('[Dashboard] Setting admin screen: MASTER_LEDGER');
-        setActiveScreen(SCREENS.MASTER_LEDGER);
-      } else {
-        console.log('[Dashboard] Setting resident screen: DASHBOARD');
-        setActiveScreen(SCREENS.DASHBOARD);
-      }
-    } else {
+    if (!session?.user) {
       console.warn('[Dashboard] No session.user found');
+      return;
     }
+
+    console.log('[Dashboard] Initializing user from session:', {
+      userId: session.user.id,
+      role: session.user.role,
+      plotNumber: session.user.plotNumber,
+    });
+    
+    const plotData = session.user.plotNumber ? getPlotByNumber(session.user.plotNumber) : undefined;
+    
+    console.log('[Dashboard] Plot data lookup result:', {
+      plotNumber: session.user.plotNumber,
+      foundPlotData: !!plotData,
+      plotData: plotData ? { villaNo: plotData.villaNo, areaInSqFt: plotData.areaInSqFt } : null,
+    });
+    
+    const userData = {
+      id: session.user.id,
+      fullName: session.user.name,
+      email: session.user.email,
+      plotNumber: session.user.plotNumber || '',
+      plotData,
+    };
+
+    const initialScreen = session.user.role === 'ADMIN' ? SCREENS.MASTER_LEDGER : SCREENS.DASHBOARD;
+    
+    console.log(`[Dashboard] Setting ${session.user.role === 'ADMIN' ? 'admin' : 'resident'} screen:`, initialScreen);
+    
+    // Use startTransition to avoid cascading renders warning
+    Promise.resolve().then(() => {
+      setCurrentUser(userData);
+      setActiveScreen(initialScreen);
+    });
   }, [session]);
 
   // Approve Registration Handler (Admin)
@@ -93,20 +108,49 @@ export default function DashboardPage() {
 
   // Approve Request Handler (Admin)
   const handleApproveRequest = useCallback((requestId: string, adminNotes?: string) => {
-    setResidentRequests(prev => prev.map(req => 
-      req.id === requestId 
-        ? { ...req, status: 'APPROVED' as const, adminNotes, updatedAt: new Date().toISOString() }
-        : req
-    ));
+    setResidentRequests(prev => prev.map(req => {
+      if (req.id === requestId) {
+        return {
+          ...req,
+          status: 'RESOLVED' as RequestStatus,
+          adminNotes,
+          updatedAt: new Date().toISOString(),
+          resolvedAt: new Date().toISOString(),
+        };
+      }
+      return req;
+    }));
   }, []);
 
   // Reject Request Handler (Admin)
   const handleRejectRequest = useCallback((requestId: string, adminNotes?: string) => {
-    setResidentRequests(prev => prev.map(req => 
-      req.id === requestId 
-        ? { ...req, status: 'REJECTED' as const, adminNotes, updatedAt: new Date().toISOString() }
-        : req
-    ));
+    setResidentRequests(prev => prev.map(req => {
+      if (req.id === requestId) {
+        return {
+          ...req,
+          status: 'REJECTED' as RequestStatus,
+          adminNotes,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return req;
+    }));
+  }, []);
+
+  // Update Society Settings Handler (Admin) - These are now no-op since SocietyFinancialSettings component handles updates via Redux
+  const handleUpdatePerSqFtRate = useCallback(async (rate: number) => {
+    // This is now handled by SocietyFinancialSettings component via Redux
+    console.log('[Dashboard] Per sq.ft rate update delegated to SocietyFinancialSettings component');
+  }, []);
+
+  const handleUpdateSinkingFund = useCallback(async (percentage: number) => {
+    // This is now handled by SocietyFinancialSettings component via Redux
+    console.log('[Dashboard] Sinking fund percentage update delegated to SocietyFinancialSettings component');
+  }, []);
+
+  const handleUpdateTotalVillas = useCallback(async (total: number) => {
+    // This is now handled by SocietyFinancialSettings component via Redux
+    console.log('[Dashboard] Total villas update delegated to SocietyFinancialSettings component');
   }, []);
 
   // Loading state
@@ -139,11 +183,11 @@ export default function DashboardPage() {
           activeScreen={activeScreen}
           onScreenChange={setActiveScreen}
           perSqFtRate={perSqFtRate}
-          fixedBaseAmount={fixedBaseAmount}
           sinkingFundPercentage={sinkingFundPercentage}
-          onUpdatePerSqFtRate={setPerSqFtRate}
-          onUpdateFixedBase={setFixedBaseAmount}
-          onUpdateSinkingFund={setSinkingFundPercentage}
+          totalVillas={totalVillas}
+          onUpdatePerSqFtRate={handleUpdatePerSqFtRate}
+          onUpdateSinkingFund={handleUpdateSinkingFund}
+          onUpdateTotalVillas={handleUpdateTotalVillas}
           pendingRegistrations={pendingRegistrations}
           onApproveRegistration={handleApproveRegistration}
           onDeclineRegistration={handleDeclineRegistration}
@@ -157,7 +201,6 @@ export default function DashboardPage() {
           onScreenChange={setActiveScreen}
           currentUser={currentUser}
           perSqFtRate={perSqFtRate}
-          fixedBaseAmount={fixedBaseAmount}
           requests={residentRequests}
           onSubmitRequest={handleSubmitRequest}
         />

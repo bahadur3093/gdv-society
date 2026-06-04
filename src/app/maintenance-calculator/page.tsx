@@ -12,6 +12,7 @@ import {
 } from '@/lib/utils/calculations';
 import type { PlotData } from '@/types';
 import { Menu, X } from 'lucide-react';
+import { PageLoader } from '@/components';
 
 /**
  * Expense item interface
@@ -227,9 +228,7 @@ export default function MaintenanceCalculatorPage() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background p-6 flex items-center justify-center">
-        <Typography variant="body" className="text-text-muted">
-          Loading villa data...
-        </Typography>
+        <PageLoader />
       </div>
     );
   }

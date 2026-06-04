@@ -160,8 +160,7 @@ export async function PATCH(
     // Calculate expenses with updated data
     const expenses = calculateVillaExpenses(
       updatedVilla.areaInSqFt,
-      totalVillas,
-      settings
+      Number(settings.perSqFtRate)
     );
 
     const villaWithExpenses = {
@@ -171,10 +170,8 @@ export async function PATCH(
       ownerName: updatedVilla.ownerName,
       areaInSqFt: updatedVilla.areaInSqFt,
       remarks: updatedVilla.remarks,
-      fixedAmount: expenses.fixedAmount,
-      variableAmount: expenses.variableAmount,
-      hybridTotal: expenses.hybridTotal,
-      flatRate: expenses.flatRate,
+      maintenanceAmount: expenses.maintenanceAmount,
+      perSqFtRate: expenses.perSqFtRate,
     };
 
     const response: ApiResponse = {
@@ -183,29 +180,31 @@ export async function PATCH(
       message: 'Villa updated successfully',
     };
     return NextResponse.json(response, { status: HttpStatus.OK });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error updating villa:', error);
 
-    if (error.name === 'AuthError') {
+    if (error instanceof Error && error.name === 'AuthError') {
+      const authError = error as Error & { statusCode?: number };
       const response: ApiResponse = {
         success: false,
-        error: error.message,
+        error: authError.message,
       };
-      return NextResponse.json(response, { status: error.statusCode });
+      return NextResponse.json(response, { status: authError.statusCode || HttpStatus.UNAUTHORIZED });
     }
 
-    if (error.name === 'ValidationError') {
+    if (error instanceof Error && error.name === 'ValidationError') {
+      const validationError = error as Error & { errors?: Array<{ field: string; message: string }> };
       const response: ApiError = {
         success: false,
-        error: error.message,
-        validationErrors: error.errors,
+        error: validationError.message,
+        validationErrors: validationError.errors,
       };
       return NextResponse.json(response, { status: HttpStatus.BAD_REQUEST });
     }
 
     const response: ApiResponse = {
       success: false,
-      error: error.message || 'Failed to update villa',
+      error: error instanceof Error ? error.message : 'Failed to update villa',
     };
     return NextResponse.json(response, { status: HttpStatus.INTERNAL_SERVER_ERROR });
   }
@@ -259,20 +258,20 @@ export async function DELETE(
       message: `Villa ${villaNo} deleted successfully`,
     };
     return NextResponse.json(response, { status: HttpStatus.OK });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error deleting villa:', error);
 
-    if (error.name === 'AuthError') {
+    if (error instanceof Error && error.name === 'AuthError') {
       const response: ApiResponse = {
         success: false,
         error: error.message,
       };
-      return NextResponse.json(response, { status: error.statusCode });
+      return NextResponse.json(response, { status: (error as { statusCode?: number }).statusCode || HttpStatus.UNAUTHORIZED });
     }
 
     const response: ApiResponse = {
       success: false,
-      error: error.message || 'Failed to delete villa',
+      error: error instanceof Error ? error.message : 'Failed to delete villa',
     };
     return NextResponse.json(response, { status: HttpStatus.INTERNAL_SERVER_ERROR });
   }

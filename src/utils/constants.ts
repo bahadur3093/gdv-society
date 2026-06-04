@@ -2,28 +2,7 @@ import { FinancialSettings } from '@/types';
 
 // Default Financial Settings
 export const DEFAULT_PER_SQFT_RATE = 2.15;
-export const DEFAULT_FIXED_BASE_AMOUNT = 1873.0;
 export const DEFAULT_SINKING_FUND_PERCENTAGE = 20;
-
-// Default Society Expenses (Monthly)
-export const DEFAULT_EXPENSES = {
-  security: 63000,
-  electricity: 25000,
-  misc: 9000,
-  cleaning: 5000,
-  garbage: 3000,
-  gym: 6000,
-  stpMaintenance: 1000,
-  emergencyFund: 21000,
-};
-
-// Default Financial Settings Object
-export const DEFAULT_FINANCIAL_SETTINGS: FinancialSettings = {
-  perSqFtRate: DEFAULT_PER_SQFT_RATE,
-  fixedBaseAmount: DEFAULT_FIXED_BASE_AMOUNT,
-  sinkingFundPercentage: DEFAULT_SINKING_FUND_PERCENTAGE,
-  expenses: DEFAULT_EXPENSES,
-};
 
 // Total Villas in Society
 export const TOTAL_VILLAS = 47;
@@ -42,6 +21,8 @@ export const SCREENS = {
   ADMIN_REQUESTS: 'admin-requests' as const,
   USER_MANAGEMENT: 'user-management' as const,
   PLOT_LAYOUT: 'plot-layout' as const,
+  CONFIG_MANAGEMENT: 'config-management' as const,
+  EXPENSE_MANAGER: 'expense-manager' as const,
 };
 
 // Resident Navigation Items
@@ -51,6 +32,7 @@ export const RESIDENT_NAV_ITEMS = [
   { id: SCREENS.BREAKDOWN, label: 'Maintenance Breakdown', icon: 'Calculator' },
   { id: SCREENS.REQUESTS, label: 'My Requests', icon: 'FileText' },
   { id: SCREENS.PLOT_LAYOUT, label: 'Plot Layout Map', icon: 'Map' },
+  { id: SCREENS.EXPENSE_MANAGER, label: 'Expenses', icon: 'Database' },
 ];
 
 // Admin Navigation Items
@@ -60,6 +42,8 @@ export const ADMIN_NAV_ITEMS = [
   { id: SCREENS.USER_MANAGEMENT, label: 'User Management', icon: 'Users' },
   { id: SCREENS.SETTINGS, label: 'Settings', icon: 'Settings' },
   { id: SCREENS.ADMIN_REQUESTS, label: 'Requests', icon: 'FileText' },
+  { id: SCREENS.CONFIG_MANAGEMENT, label: 'Config Management', icon: 'Database' },
+  { id: SCREENS.EXPENSE_MANAGER, label: 'Expense Manager', icon: 'Database' },
   { id: SCREENS.PLOT_LAYOUT, label: 'Plot Layout Map', icon: 'Map' },
 ];
 

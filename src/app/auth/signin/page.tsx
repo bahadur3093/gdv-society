@@ -395,8 +395,8 @@ function SignInForm() {
         {process.env.NODE_ENV === 'development' && (
           <div className="mt-6 p-4 bg-cyan-500/10 border border-cyan-500/20 rounded-lg">
             <p className="text-xs text-cyan-400 font-medium mb-2">Development Mode - Admin Credentials:</p>
-            <p className="text-xs text-cyan-300 font-mono">Email: admin@admin.com</p>
-            <p className="text-xs text-cyan-300 font-mono">Password: !Mw#h@bCrrZ4Xkg</p>
+            <p className="text-xs text-cyan-300 font-mono">Email: {process.env.NEXT_PUBLIC_ADMIN_EMAIL}</p>
+            <p className="text-xs text-cyan-300 font-mono">Password: {process.env.NEXT_PUBLIC_ADMIN_PASSWORD}</p>
           </div>
         )}
       </div>

@@ -7,15 +7,13 @@ import { TrendingUp, AlertCircle, Bell } from 'lucide-react';
 interface DashboardSummaryProps {
   currentUser?: ResidentUser;
   perSqFtRate: number;
-  fixedBaseAmount: number;
 }
 
-export default function DashboardSummary({ currentUser, perSqFtRate, fixedBaseAmount }: DashboardSummaryProps) {
+export default function DashboardSummary({ currentUser, perSqFtRate }: DashboardSummaryProps) {
   console.log('[DashboardSummary] Rendering with:', {
     hasCurrentUser: !!currentUser,
     hasPlotData: !!currentUser?.plotData,
     perSqFtRate,
-    fixedBaseAmount,
   });
 
   if (!currentUser || !currentUser.plotData) {

@@ -73,7 +73,6 @@ async function seedSocietySettings() {
     console.log('Settings ID:', settings.id);
     console.log('\n📊 Summary:');
     console.log(`   Per Sq Ft Rate: ₹${settings.perSqFtRate}`);
-    console.log(`   Fixed Base Amount: ₹${settings.fixedBaseAmount}`);
     console.log(`   Sinking Fund %: ${settings.sinkingFundPercentage}%`);
     console.log('\n💡 You can now use the /api/plot-registry endpoint!');
   } catch (error: any) {

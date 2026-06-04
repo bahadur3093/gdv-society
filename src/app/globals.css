@@ -1,95 +1,143 @@
 @import "tailwindcss";
 
-@theme {
-  /* New Gemini Design System - Deep Slate Backgrounds */
-  --color-background: #090d16;
-  --color-surface: #0f172a;
-  --color-border: rgba(148, 163, 184, 0.1);
-
-  /* Accent Glow Colors - New Gemini Design System */
-  --color-violet: #8b5cf6;
-  --color-violet-dark: #7c3aed;
-  --color-cyan: #22d3ee;
-  --color-cyan-dark: #06b6d4;
-  --color-indigo: #4f46e5;
-  --color-indigo-dark: #4338ca;
-
-  /* Text & Contrast */
-  --color-text-main: #f1f5f9;
-  --color-text-muted: #94a3b8;
-  --color-text-dim: #64748b;
-  
-  /* Adaptive Depth Layering */
-  --shadow-glow-violet: 0 0 20px rgba(139, 92, 246, 0.3);
-  --shadow-glow-cyan: 0 0 20px rgba(34, 211, 238, 0.3);
-  --shadow-glow-subtle: 0 4px 14px 0 rgba(0, 0, 0, 0.5);
+/* JSONEditor Custom Styles */
+.jsoneditor-wrapper {
+  width: 100%;
 }
 
-:root {
-  --background: var(--color-background);
-  --foreground: var(--color-text-main);
-  
-  /* Font families */
-  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-jetbrains-mono), ui-monospace, 'Cascadia Code', 'Source Code Pro', Menlo, Monaco, Consolas, 'Courier New', monospace;
+.jsoneditor-wrapper .jsoneditor {
+  border: 0;
 }
 
-/* Scrollbar Styling */
-.scroller-hidden::-webkit-scrollbar {
-  display: none;
+.jsoneditor-wrapper .jsoneditor-menu {
+  background-color: rgb(30 41 59);
+  border-bottom: 1px solid rgb(51 65 85);
 }
 
-.scroller-hidden {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
+.jsoneditor-wrapper .jsoneditor-menu > button,
+.jsoneditor-wrapper .jsoneditor-menu > .jsoneditor-modes > button {
+  background-color: rgb(51 65 85);
+  color: rgb(226 232 240);
+  border-color: rgb(71 85 105);
 }
 
-body {
-  background-color: var(--color-background);
-  color: var(--color-text-main);
-  font-family: var(--font-sans);
-  /* New Gemini Design System - Ambient Background Mesh Glow */
-  background-image: radial-gradient(
-    ellipse at top,
-    rgba(15, 23, 42, 0.5) 0%,
-    transparent 50%
-  );
-  min-height: 100vh;
+.jsoneditor-wrapper .jsoneditor-menu > button:hover,
+.jsoneditor-wrapper .jsoneditor-menu > .jsoneditor-modes > button:hover {
+  background-color: rgb(71 85 105);
 }
 
-/* New Gemini Design System - Component-specific CSS */
-.bg-surface { background-color: var(--color-surface); }
-.bg-background { background-color: var(--color-background); }
-.border-border { border-color: var(--color-border); }
-.text-text-main { color: var(--color-text-main); }
-.text-text-muted { color: var(--color-text-muted); }
-.text-text-dim { color: var(--color-text-dim); }
+.jsoneditor-wrapper .jsoneditor-tree,
+.jsoneditor-wrapper .jsoneditor-text {
+  background-color: rgb(15 23 42);
+  color: rgb(241 245 249);
+}
 
-/* Accent Glow Colors */
-.text-violet { color: var(--color-violet); }
-.text-cyan { color: var(--color-cyan); }
-.text-indigo { color: var(--color-indigo); }
-.bg-violet { background-color: var(--color-violet); }
-.bg-cyan { background-color: var(--color-cyan); }
-.bg-indigo { background-color: var(--color-indigo); }
+.jsoneditor-wrapper .jsoneditor-field,
+.jsoneditor-wrapper .jsoneditor-value {
+  color: rgb(241 245 249);
+}
 
-/* Interactive Gradient Glows */
-.glow-violet { box-shadow: var(--shadow-glow-violet); }
-.glow-cyan { box-shadow: var(--shadow-glow-cyan); }
-.shadow-subtle { box-shadow: var(--shadow-glow-subtle); }
+.jsoneditor-wrapper .jsoneditor-string {
+  color: rgb(74 222 128);
+}
 
-/* Pulsing Animation for Pending State */
-@keyframes pulse-glow {
-  0%, 100% {
-    opacity: 1;
-    box-shadow: 0 0 20px rgba(34, 211, 238, 0.4);
+.jsoneditor-wrapper .jsoneditor-number {
+  color: rgb(96 165 250);
+}
+
+.jsoneditor-wrapper .jsoneditor-boolean {
+  color: rgb(192 132 252);
+}
+
+.jsoneditor-wrapper .jsoneditor-null {
+  color: rgb(248 113 113);
+}
+
+.jsoneditor-wrapper .jsoneditor-tree button.jsoneditor-button {
+  background-color: rgb(51 65 85);
+}
+
+.jsoneditor-wrapper .jsoneditor-search input {
+  background-color: rgb(30 41 59);
+  color: rgb(241 245 249);
+  border-color: rgb(51 65 85);
+}
+
+.jsoneditor-wrapper .jsoneditor-statusbar {
+  background-color: rgb(30 41 59);
+  border-top: 1px solid rgb(51 65 85);
+  color: rgb(148 163 184);
+}
+
+.jsoneditor-wrapper .ace_editor {
+  background-color: rgb(15 23 42);
+}
+
+.jsoneditor-wrapper .ace_gutter {
+  background-color: rgb(30 41 59);
+  color: rgb(148 163 184);
+}
+
+.jsoneditor-wrapper .ace_content {
+  background-color: rgb(15 23 42);
+}
+
+/* Material Design / Android-style Custom Scrollbar */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: transparent transparent;
+  scroll-behavior: smooth;
+}
+
+/* Show scrollbar on hover - Material Design style */
+.custom-scrollbar:hover {
+  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: transparent;
+  border-radius: 8px;
+  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Show scrollbar thumb on hover - Material Design elevation */
+.custom-scrollbar:hover::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:active {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .custom-scrollbar:hover {
+    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
   }
-  50% {
-    opacity: 0.8;
-    box-shadow: 0 0 40px rgba(34, 211, 238, 0.6);
+  
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.3);
   }
-}
-
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.5);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb:active {
+    background: rgba(255, 255, 255, 0.6);
+  }
 }

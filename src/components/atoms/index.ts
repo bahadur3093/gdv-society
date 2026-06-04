@@ -20,5 +20,9 @@ export type { InputProps, TextareaProps, InputVariant, InputSize, InputState } f
 export { Badge } from './Badge';
 export type { BadgeProps, BadgeVariant, BadgeSize, BadgeShape } from './Badge';
 
+export { default as MonthSelector } from './MonthSelector';
+export { default as PageLoader } from './PageLoader';
+export { default as Toast } from './Toast';
+
 // Export all atom components from this index
 // This will be expanded as we add more components

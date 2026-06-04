@@ -16,6 +16,7 @@ import {
   ChevronRight
 } from 'lucide-react';
 import ConfirmDialog from '@/components/molecules/ConfirmDialog';
+import { PageLoader } from '../atoms';
 
 interface User {
   id: string;
@@ -262,10 +263,10 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
     (user.plotNumber && user.plotNumber.includes(searchQuery))
   );
 
-  if (loading && users.length === 0) {
+  if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-slate-400">Loading users...</div>
+      <div className="flex items-center justify-center min-h-screen">
+        <PageLoader message="Loading..." fullScreen />
       </div>
     );
   }

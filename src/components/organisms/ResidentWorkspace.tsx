@@ -1,7 +1,7 @@
 'use client';
 
 import { ScreenType, ResidentUser, ResidentRequest } from '@/types';
-import { LayoutDashboard, Receipt, Calculator, FileText, Menu, X, LogOut, Map } from 'lucide-react';
+import { LayoutDashboard, Receipt, Calculator, FileText, Menu, X, LogOut, Map, Database } from 'lucide-react';
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -13,13 +13,13 @@ import AccountsLedger from '@/components/templates/AccountsLedger';
 import MaintenanceBreakdown from '@/components/templates/MaintenanceBreakdown';
 import ResidentRequests from '@/components/templates/ResidentRequests';
 import PlotLayoutMap from '@/components/templates/PlotLayoutMap';
+import ExpenseManager from '@/components/templates/ExpenseManager';
 
 interface ResidentWorkspaceProps {
   activeScreen: ScreenType;
   onScreenChange: (screen: ScreenType) => void;
   currentUser?: ResidentUser;
   perSqFtRate: number;
-  fixedBaseAmount: number;
   requests: ResidentRequest[];
   onSubmitRequest: (requestData: Omit<ResidentRequest, 'id' | 'createdAt' | 'status'>) => void;
 }
@@ -30,6 +30,7 @@ const navItems = [
   { id: SCREENS.BREAKDOWN, label: 'Maintenance', icon: Calculator },
   { id: SCREENS.REQUESTS, label: 'Requests', icon: FileText },
   { id: SCREENS.PLOT_LAYOUT, label: 'Plot Layout Map', icon: Map },
+  { id: SCREENS.EXPENSE_MANAGER, label: 'Expense Manager', icon: Database },
 ];
 
 export default function ResidentWorkspace({
@@ -37,7 +38,6 @@ export default function ResidentWorkspace({
   onScreenChange,
   currentUser,
   perSqFtRate,
-  fixedBaseAmount,
   requests,
   onSubmitRequest,
 }: ResidentWorkspaceProps) {
@@ -51,7 +51,6 @@ export default function ResidentWorkspace({
           <DashboardSummary
             currentUser={currentUser}
             perSqFtRate={perSqFtRate}
-            fixedBaseAmount={fixedBaseAmount}
           />
         );
       case SCREENS.LEDGER:
@@ -61,7 +60,6 @@ export default function ResidentWorkspace({
           <MaintenanceBreakdown
             currentUser={currentUser}
             perSqFtRate={perSqFtRate}
-            fixedBaseAmount={fixedBaseAmount}
           />
         );
       case SCREENS.REQUESTS:
@@ -74,6 +72,8 @@ export default function ResidentWorkspace({
         );
       case SCREENS.PLOT_LAYOUT:
         return <PlotLayoutMap userRole="resident" />;
+      case SCREENS.EXPENSE_MANAGER:
+        return <ExpenseManager isAdmin={false} />;
       default:
         return null;
     }
@@ -99,7 +99,7 @@ export default function ResidentWorkspace({
           mobileMenuOpen ? 'block' : 'hidden'
         } lg:block lg:w-64 bg-slate-900/30 border-r border-slate-800/40 lg:min-h-screen transition-all duration-300 ease-in-out`}
       >
-        <div className="p-6">
+        <div className="p-6 sticky top-0">
           <div className="hidden lg:block mb-8">
             <h1 className="text-2xl font-bold text-slate-100 mb-1">GDV Resident Hub</h1>
             <p className="text-sm text-slate-400">Resident Portal</p>
