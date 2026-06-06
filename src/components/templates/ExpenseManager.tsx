@@ -306,18 +306,6 @@ export default function ExpenseManager({ isAdmin }: ExpenseManagerProps) {
         />
       </div>
 
-      {/* Role Indicator for Residents */}
-      {!isAdmin && (
-        <div className="bg-blue-900/20 border border-blue-500/30 rounded-lg p-3">
-          <div className="flex items-center gap-2">
-            <Calendar className="w-4 h-4 text-blue-400" />
-            <p className="text-xs text-blue-300">
-              <span className="font-semibold">Resident View:</span> You can view expense data for all months. Only administrators can add, edit, or delete expenses.
-            </p>
-          </div>
-        </div>
-      )}
-
       {/* Action Buttons */}
       {isAdmin && (
         <div className="flex gap-3">

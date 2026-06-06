@@ -35,7 +35,8 @@ export async function GET() {
     const villasWithExpenses = villas.map((villa) => {
       const expenses = calculateVillaExpenses(
         villa.areaInSqFt,
-        Number(settings.perSqFtRate)
+        Number(settings.perSqFtRate),
+        settings.sinkingFundPercentage
       );
 
       return {
@@ -45,8 +46,10 @@ export async function GET() {
         ownerName: villa.ownerName,
         areaInSqFt: villa.areaInSqFt,
         remarks: villa.remarks,
-        maintenanceAmount: expenses.maintenanceAmount,
-        perSqFtRate: expenses.perSqFtRate,
+        maintenanceAmount: expenses.totalMaintenance,
+        perSqFtRate: Number(settings.perSqFtRate),
+        coreOperations: expenses.coreOperations,
+        sinkingFund: expenses.sinkingFund,
       };
     });
 
@@ -112,7 +115,8 @@ export async function POST(request: NextRequest) {
     // Calculate expenses for the new villa
     const expenses = calculateVillaExpenses(
       villa.areaInSqFt,
-      Number(settings.perSqFtRate)
+      Number(settings.perSqFtRate),
+      settings.sinkingFundPercentage
     );
 
     const villaWithExpenses = {
@@ -122,8 +126,10 @@ export async function POST(request: NextRequest) {
       ownerName: villa.ownerName,
       areaInSqFt: villa.areaInSqFt,
       remarks: villa.remarks,
-      maintenanceAmount: expenses.maintenanceAmount,
-      perSqFtRate: expenses.perSqFtRate,
+      maintenanceAmount: expenses.totalMaintenance,
+      perSqFtRate: Number(settings.perSqFtRate),
+      coreOperations: expenses.coreOperations,
+      sinkingFund: expenses.sinkingFund,
     };
 
     const response: ApiResponse = {

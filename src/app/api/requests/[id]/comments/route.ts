@@ -19,7 +19,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth();
+    const authResult = await requireAuth();
+    
+    // Check if authentication failed
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    
+    const { user } = authResult;
     const { id: requestId } = await params;
 
     // Check if request exists and user has access
@@ -112,7 +119,14 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth();
+    const authResult = await requireAuth();
+    
+    // Check if authentication failed
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    
+    const { user } = authResult;
     const { id: requestId } = await params;
 
     const body = await request.json();

@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
+import { auth } from '@/lib/auth';
 import { z } from 'zod';
 import { prisma } from '@/lib/prisma';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 
 // Helper function to check if a month/year is in the future
 const isFutureMonth = (month: number, year: number): boolean => {
@@ -52,7 +51,7 @@ const bulkExpenseSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(
@@ -119,7 +118,7 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(
@@ -254,7 +253,7 @@ export async function POST(request: NextRequest) {
  */
 export async function PUT(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(
@@ -321,7 +320,7 @@ export async function PUT(request: NextRequest) {
  */
 export async function DELETE(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     
     if (!session || !session.user) {
       return NextResponse.json(

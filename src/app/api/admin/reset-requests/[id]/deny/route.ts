@@ -14,7 +14,14 @@ export async function POST(
     const { id } = await params;
     
     // Require admin authentication
-    const admin = await requireAdmin();
+    const authResult = await requireAdmin();
+    
+    // Check if authentication failed
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    
+    const { user: admin } = authResult;
 
     // Find the reset request
     const resetRequest = await prisma.passwordResetRequest.findUnique({

@@ -81,3 +81,48 @@ export const calculateCoreOperations = (
 ): number => {
   return amount - calculateSinkingFund(amount, sinkingFundPercentage);
 };
+
+/**
+ * Calculate maintenance cost per square foot
+ */
+export const calculateMaintenanceCostPerSqFt = (
+  totalExpenses: number,
+  totalAreaInSqFt: number
+): number => {
+  if (totalAreaInSqFt === 0) return 0;
+  return totalExpenses / totalAreaInSqFt;
+};
+
+/**
+ * Calculate fixed expense per villa
+ */
+export const calculateFixedExpensePerVilla = (
+  totalExpenses: number,
+  totalVillas: number
+): number => {
+  if (totalVillas === 0) return 0;
+  return totalExpenses / totalVillas;
+};
+
+/**
+ * Calculate villa expenses based on area and rates
+ */
+export const calculateVillaExpenses = (
+  areaInSqFt: number,
+  perSqFtRate: number,
+  sinkingFundPercentage: number = 20
+): {
+  totalMaintenance: number;
+  coreOperations: number;
+  sinkingFund: number;
+} => {
+  const totalMaintenance = calculateFlatRateMaintenance(areaInSqFt, perSqFtRate);
+  const sinkingFund = calculateSinkingFund(totalMaintenance, sinkingFundPercentage);
+  const coreOperations = calculateCoreOperations(totalMaintenance, sinkingFundPercentage);
+
+  return {
+    totalMaintenance,
+    coreOperations,
+    sinkingFund,
+  };
+};

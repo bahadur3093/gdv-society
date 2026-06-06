@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
 
     // Hash password
     const hashedPassword = await hashPassword(validatedData.password);
+    
+    // Store the plain password to send in welcome email
+    const plainPassword = validatedData.password;
 
     // Create user with emailVerified set to null (unverified) for regular users
     // Admin accounts should have emailVerified set to current date immediately
@@ -52,8 +55,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Send welcome email (non-blocking)
-    sendWelcomeEmail(user.email, user.name).catch((error) => {
+    // Send welcome email with password (non-blocking)
+    sendWelcomeEmail(user.email, user.name, plainPassword).catch((error) => {
       console.error('Failed to send welcome email:', error);
     });
 

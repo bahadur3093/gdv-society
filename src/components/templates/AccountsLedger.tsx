@@ -21,9 +21,6 @@ export default function AccountsLedger({ currentUser }: AccountsLedgerProps) {
   const coreOperationsEntries = MOCK_LEDGER_ENTRIES.filter(
     (entry) => entry.category === 'core-operations'
   );
-  const sinkingFundEntries = MOCK_LEDGER_ENTRIES.filter(
-    (entry) => entry.category === 'sinking-fund'
-  );
 
   const renderLedgerTable = (entries: typeof MOCK_LEDGER_ENTRIES, title: string, color: string) => (
     <div className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-6">
@@ -104,22 +101,10 @@ export default function AccountsLedger({ currentUser }: AccountsLedgerProps) {
             {coreOperationsEntries.length} transactions
           </p>
         </div>
-        <div className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-6">
-          <p className="text-sm text-slate-400 mb-2">Sinking Fund Balance</p>
-          <p className="text-2xl font-bold font-mono text-cyan-400">
-            {formatCurrency(sinkingFundEntries[0]?.balance || 0)}
-          </p>
-          <p className="text-xs text-slate-500 mt-2">
-            {sinkingFundEntries.length} contributions
-          </p>
-        </div>
       </div>
 
       {/* Core Operations Ledger */}
       {renderLedgerTable(coreOperationsEntries, 'Core Operations', 'text-violet-400')}
-
-      {/* Sinking Fund Ledger */}
-      {renderLedgerTable(sinkingFundEntries, 'Sinking Fund', 'text-cyan-400')}
     </div>
   );
 }

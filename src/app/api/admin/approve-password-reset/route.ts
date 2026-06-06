@@ -50,13 +50,14 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(response, { status: HttpStatus.BAD_REQUEST });
     }
 
-    // Update the request status to approved
+    // Update the request status to resolved (APPROVED is not a valid RequestStatus)
     await prisma.residentRequest.update({
       where: { id: requestId },
       data: {
-        status: 'APPROVED',
+        status: 'RESOLVED',
         adminNotes: adminNotes || 'Password reset approved',
         updatedAt: new Date(),
+        resolvedAt: new Date(),
       },
     });
 

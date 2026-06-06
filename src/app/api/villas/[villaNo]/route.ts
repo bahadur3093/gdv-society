@@ -57,7 +57,8 @@ export async function GET(
     // Calculate expenses
     const expenses = calculateVillaExpenses(
       villa.areaInSqFt,
-      Number(settings.perSqFtRate)
+      Number(settings.perSqFtRate),
+      settings.sinkingFundPercentage
     );
 
     const villaWithExpenses = {
@@ -67,8 +68,10 @@ export async function GET(
       ownerName: villa.ownerName,
       areaInSqFt: villa.areaInSqFt,
       remarks: villa.remarks,
-      maintenanceAmount: expenses.maintenanceAmount,
-      perSqFtRate: expenses.perSqFtRate,
+      maintenanceAmount: expenses.totalMaintenance,
+      perSqFtRate: Number(settings.perSqFtRate),
+      coreOperations: expenses.coreOperations,
+      sinkingFund: expenses.sinkingFund,
     };
 
     const response: ApiResponse = {
@@ -154,7 +157,8 @@ export async function PATCH(
     // Calculate expenses with updated data
     const expenses = calculateVillaExpenses(
       updatedVilla.areaInSqFt,
-      Number(settings.perSqFtRate)
+      Number(settings.perSqFtRate),
+      settings.sinkingFundPercentage
     );
 
     const villaWithExpenses = {
@@ -164,8 +168,10 @@ export async function PATCH(
       ownerName: updatedVilla.ownerName,
       areaInSqFt: updatedVilla.areaInSqFt,
       remarks: updatedVilla.remarks,
-      maintenanceAmount: expenses.maintenanceAmount,
-      perSqFtRate: expenses.perSqFtRate,
+      maintenanceAmount: expenses.totalMaintenance,
+      perSqFtRate: Number(settings.perSqFtRate),
+      coreOperations: expenses.coreOperations,
+      sinkingFund: expenses.sinkingFund,
     };
 
     const response: ApiResponse = {

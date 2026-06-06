@@ -1,15 +1,16 @@
-import { withAuth } from 'next-auth/middleware';
+import { auth } from '@/lib/auth';
 import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
 
-export default withAuth(
-  function middleware(req) {
-    const token = req.nextauth.token;
-    const isAuth = !!token;
-    const isAuthPage = req.nextUrl.pathname.startsWith('/auth');
-    const isAdminPage = req.nextUrl.pathname.startsWith('/admin');
-    const isApiRoute = req.nextUrl.pathname.startsWith('/api');
-    const isDashboardPage = req.nextUrl.pathname.startsWith('/dashboard');
-    const isMaintenanceCalculator = req.nextUrl.pathname.startsWith('/maintenance-calculator');
+export default auth(async function middleware(req: NextRequest) {
+  const session = await auth();
+  const token = session?.user;
+  const isAuth = !!token;
+  const isAuthPage = req.nextUrl.pathname.startsWith('/auth');
+  const isAdminPage = req.nextUrl.pathname.startsWith('/admin');
+  const isApiRoute = req.nextUrl.pathname.startsWith('/api');
+  const isDashboardPage = req.nextUrl.pathname.startsWith('/dashboard');
+  const isMaintenanceCalculator = req.nextUrl.pathname.startsWith('/maintenance-calculator');
 
     // Allow API routes to handle their own authentication
     if (isApiRoute) {
@@ -67,17 +68,9 @@ export default withAuth(
     }
 
     return NextResponse.next();
-  },
-  {
-    callbacks: {
-      authorized: ({ token }) => {
-        // This callback is used by middleware to check if user is authenticated
-        // Return true to allow access, false to redirect to sign-in
-        return true; // We handle authorization in the middleware function above
-      },
-    },
-  }
-);
+});
+
+export const runtime = 'nodejs';
 
 export const config = {
   matcher: [

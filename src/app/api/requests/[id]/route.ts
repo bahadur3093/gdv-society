@@ -20,7 +20,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const user = await requireAuth();
+    const authResult = await requireAuth();
+    
+    // Check if authentication failed
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    
+    const { user } = authResult;
     const { id } = await params;
 
     const residentRequest = await prisma.residentRequest.findUnique({

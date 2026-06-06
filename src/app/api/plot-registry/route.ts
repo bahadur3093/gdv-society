@@ -36,8 +36,8 @@ export async function GET(request: NextRequest) {
     const plotRegistry: PlotData[] = villas.map((villa) => {
       const expenses = calculateVillaExpenses(
         villa.areaInSqFt,
-        totalVillas,
-        settings
+        settings.perSqFtRate,
+        settings.sinkingFundPercentage
       );
 
       return {
@@ -47,10 +47,10 @@ export async function GET(request: NextRequest) {
         ownerName: villa.ownerName,
         areaInSqFt: villa.areaInSqFt,
         remarks: villa.remarks || '',
-        fixedAmount: expenses.fixedAmount,
-        variableAmount: expenses.variableAmount,
-        hybridTotal: expenses.hybridTotal,
-        flatRate: expenses.flatRate,
+        fixedAmount: 0, // Not using fixed amount in flat rate calculation
+        variableAmount: expenses.totalMaintenance,
+        hybridTotal: expenses.totalMaintenance,
+        flatRate: expenses.totalMaintenance,
       };
     });
 

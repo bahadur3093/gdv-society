@@ -7,7 +7,14 @@ import { HttpStatus } from '@/types';
 export async function GET(request: NextRequest) {
   try {
     // Require authentication
-    const currentUser = await requireAuth();
+    const authResult = await requireAuth();
+    
+    // Check if authentication failed
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    
+    const { user: currentUser } = authResult;
 
     // Fetch full user details
     const user = await prisma.user.findUnique({

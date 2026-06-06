@@ -1,23 +1,133 @@
+import { MaintenanceCalculation } from '@/types';
+
 /**
  * Default total number of villas in the society
  */
-export const DEFAULT_TOTAL_VILLAS = 100;
+export const DEFAULT_TOTAL_VILLAS = 47;
 
 /**
- * Calculate villa maintenance expenses based on area and per sq ft rate
- * @param areaInSqFt - Area in square feet
- * @param perSqFtRate - Rate per square foot
- * @returns Calculated expenses
+ * Calculate hybrid maintenance cost
+ * Formula: Fixed Base + (Plot Size × Per Sq.Ft Rate)
  */
-export function calculateVillaExpenses(
-  areaInSqFt: number,
-  perSqFtRate: number,
-) {
-  // Calculate base maintenance amount
-  const maintenanceAmount = perSqFtRate * areaInSqFt;
+export const calculateHybridMaintenance = (
+  plotSize: number,
+  fixedBase: number,
+  perSqFtRate: number
+): number => {
+  const variableAmount = plotSize * perSqFtRate;
+  return fixedBase + variableAmount;
+};
+
+/**
+ * Calculate flat rate maintenance cost
+ * Formula: Plot Size × Per Sq.Ft Rate
+ */
+export const calculateFlatRateMaintenance = (
+  plotSize: number,
+  perSqFtRate: number
+): number => {
+  return plotSize * perSqFtRate;
+};
+
+/**
+ * Calculate variable amount based on plot size
+ */
+export const calculateVariableAmount = (
+  plotSize: number,
+  perSqFtRate: number
+): number => {
+  return plotSize * perSqFtRate;
+};
+
+/**
+ * Get complete maintenance calculation breakdown
+ */
+export const getMaintenanceBreakdown = (
+  plotSize: number,
+  fixedBase: number,
+  perSqFtRate: number
+): MaintenanceCalculation => {
+  const variableAmount = calculateVariableAmount(plotSize, perSqFtRate);
+  const hybridTotal = calculateHybridMaintenance(plotSize, fixedBase, perSqFtRate);
+  const flatRate = calculateFlatRateMaintenance(plotSize, perSqFtRate);
 
   return {
-    maintenanceAmount,
-    perSqFtRate,
+    fixedBase,
+    variableRate: perSqFtRate,
+    plotSize,
+    hybridTotal,
+    flatRate,
   };
-}
+};
+
+/**
+ * Calculate annual maintenance from monthly amount
+ */
+export const calculateAnnualMaintenance = (monthlyAmount: number): number => {
+  return monthlyAmount * 12;
+};
+
+/**
+ * Calculate sinking fund allocation
+ */
+export const calculateSinkingFund = (
+  amount: number,
+  percentage: number = 20
+): number => {
+  return (amount * percentage) / 100;
+};
+
+/**
+ * Calculate core operations allocation
+ */
+export const calculateCoreOperations = (
+  amount: number,
+  sinkingFundPercentage: number = 20
+): number => {
+  return amount - calculateSinkingFund(amount, sinkingFundPercentage);
+};
+
+/**
+ * Calculate maintenance cost per square foot
+ */
+export const calculateMaintenanceCostPerSqFt = (
+  totalExpenses: number,
+  totalAreaInSqFt: number
+): number => {
+  if (totalAreaInSqFt === 0) return 0;
+  return totalExpenses / totalAreaInSqFt;
+};
+
+/**
+ * Calculate fixed expense per villa
+ */
+export const calculateFixedExpensePerVilla = (
+  totalExpenses: number,
+  totalVillas: number
+): number => {
+  if (totalVillas === 0) return 0;
+  return totalExpenses / totalVillas;
+};
+
+/**
+ * Calculate villa expenses based on area and rates
+ */
+export const calculateVillaExpenses = (
+  areaInSqFt: number,
+  perSqFtRate: number,
+  sinkingFundPercentage: number = 20
+): {
+  totalMaintenance: number;
+  coreOperations: number;
+  sinkingFund: number;
+} => {
+  const totalMaintenance = calculateFlatRateMaintenance(areaInSqFt, perSqFtRate);
+  const sinkingFund = calculateSinkingFund(totalMaintenance, sinkingFundPercentage);
+  const coreOperations = calculateCoreOperations(totalMaintenance, sinkingFundPercentage);
+
+  return {
+    totalMaintenance,
+    coreOperations,
+    sinkingFund,
+  };
+};

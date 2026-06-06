@@ -1,12 +1,10 @@
-import { getServerSession } from 'next-auth';
+import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
 import ExpenseManager from '@/components/templates/ExpenseManager';
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import { prisma } from '@/lib/prisma';
 
 export default async function ExpenseManagerPage() {
-  const session = await getServerSession();
+  const session = await auth();
 
   if (!session || !session.user) {
     redirect('/auth/signin');

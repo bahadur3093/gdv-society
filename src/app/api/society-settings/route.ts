@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
@@ -58,7 +57,7 @@ export async function GET() {
 export async function PUT(request: NextRequest) {
   try {
     // Check authentication and admin role
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user) {
       return NextResponse.json(
         { success: false, error: 'Unauthorized' },
@@ -83,7 +82,7 @@ export async function PUT(request: NextRequest) {
         {
           success: false,
           error: 'Validation failed',
-          details: zodError.errors.map(err => ({
+          details: zodError.issues.map(err => ({
             field: err.path.join('.'),
             message: err.message,
           })),

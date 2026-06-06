@@ -25,7 +25,14 @@ const createRequestSchema = z.object({
  */
 export async function GET(request: NextRequest) {
   try {
-    const user = await requireAuth();
+    const authResult = await requireAuth();
+    
+    // Check if authentication failed
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    
+    const { user } = authResult;
 
     const { searchParams } = new URL(request.url);
     const pagination = paginationSchema.parse({
@@ -166,7 +173,14 @@ export async function GET(request: NextRequest) {
  */
 export async function POST(request: NextRequest) {
   try {
-    const user = await requireAuth();
+    const authResult = await requireAuth();
+    
+    // Check if authentication failed
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    
+    const { user } = authResult;
 
     const body = await request.json();
 

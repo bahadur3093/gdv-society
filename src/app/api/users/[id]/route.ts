@@ -126,9 +126,7 @@ export async function PUT(
 
     // Prepare update data with proper type conversion for emailVerified
     const updateData: Record<string, unknown> = { ...validatedData };
-    if (validatedData.emailVerified !== undefined) {
-      updateData.emailVerified = validatedData.emailVerified ? new Date(validatedData.emailVerified) : null;
-    }
+    // emailVerified is handled separately by admin actions, not through this update endpoint
 
     // Update user
     const user = await prisma.user.update({

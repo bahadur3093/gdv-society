@@ -17,11 +17,18 @@ const reopenRequestSchema = z.object({
  */
 export async function POST(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const session = await requireAuth();
-    const { id: requestId } = params;
+    const authResult = await requireAuth();
+    
+    // Check if authentication failed
+    if (authResult instanceof NextResponse) {
+      return authResult;
+    }
+    
+    const { user } = authResult;
+    const { id: requestId } = await params;
 
     const body = await request.json();
 
@@ -59,7 +66,7 @@ export async function POST(
     }
 
     // Only the request owner can reopen
-    if (residentRequest.userId !== session.user.id) {
+    if (residentRequest.userId !== user.id) {
       const response: ApiResponse = {
         success: false,
         error: 'Forbidden: You can only reopen your own requests',
@@ -104,7 +111,7 @@ export async function POST(
       await tx.requestComment.create({
         data: {
           requestId,
-          authorId: session.user.id,
+          authorId: user.id,
           content: `**Request Reopened**\n\nReason: ${reason}`,
           isAdminComment: false,
         },

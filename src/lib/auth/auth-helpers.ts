@@ -1,75 +1,75 @@
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/app/api/auth/[...nextauth]/route';
+import { auth } from '@/lib/auth';
+import { NextResponse } from 'next/server';
 import { HttpStatus } from '@/types';
 
 /**
- * Custom error class for authentication/authorization errors
- */
-class AuthError extends Error {
-  statusCode: number;
-
-  constructor(message: string, statusCode: number) {
-    super(message);
-    this.name = 'AuthError';
-    this.statusCode = statusCode;
-  }
-}
-
-/**
- * Get the current authenticated user from the session
- * @returns The authenticated user or null if not authenticated
- */
-export async function getCurrentUser() {
-  const session = await getServerSession(authOptions);
-  return session?.user || null;
-}
-
-/**
- * Require authentication - throws error if not authenticated
- * @returns The authenticated user
- * @throws AuthError if user is not authenticated
+ * Require authentication for API routes
+ * Returns the authenticated session or throws an error response
  */
 export async function requireAuth() {
-  const user = await getCurrentUser();
-  
-  if (!user) {
-    throw new AuthError('Unauthorized - Authentication required', HttpStatus.UNAUTHORIZED);
+  const session = await auth();
+
+  if (!session || !session.user) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Unauthorized - Authentication required',
+      },
+      { status: HttpStatus.UNAUTHORIZED }
+    );
   }
-  
-  return user;
+
+  return { session, user: session.user };
 }
 
 /**
- * Require admin role - throws error if not admin
- * @returns The authenticated admin user
- * @throws AuthError if user is not authenticated or not an admin
+ * Require admin role for API routes
+ * Returns the authenticated admin session or throws an error response
  */
 export async function requireAdmin() {
-  const user = await requireAuth();
-  
-  if (user.role !== 'ADMIN') {
-    throw new AuthError('Forbidden - Admin access required', HttpStatus.FORBIDDEN);
+  const authResult = await requireAuth();
+
+  if (authResult instanceof NextResponse) {
+    return authResult;
   }
-  
-  return user;
+
+  const { session, user } = authResult;
+
+  if (user.role !== 'ADMIN') {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Forbidden - Admin access required',
+      },
+      { status: HttpStatus.FORBIDDEN }
+    );
+  }
+
+  return { session, user };
 }
 
 /**
- * Require ownership or admin access
- * @param userId - The user ID to check ownership for
- * @returns The authenticated user
- * @throws AuthError if user is not authenticated, not the owner, and not an admin
+ * Require ownership or admin role for API routes
+ * Returns the authenticated session if user owns the resource or is admin
  */
-export async function requireOwnershipOrAdmin(userId: string) {
-  const user = await requireAuth();
-  
-  // Allow if user is admin or owns the resource
-  if (user.role !== 'ADMIN' && user.id !== userId) {
-    throw new AuthError('Forbidden - You can only access your own resources', HttpStatus.FORBIDDEN);
-  }
-  
-  return user;
-}
+export async function requireOwnershipOrAdmin(resourceUserId: string) {
+  const authResult = await requireAuth();
 
-// Export AuthError for use in other modules
-export { AuthError };
+  if (authResult instanceof NextResponse) {
+    return authResult;
+  }
+
+  const { session, user } = authResult;
+
+  if (user.role !== 'ADMIN' && user.id !== resourceUserId) {
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Forbidden - You do not have permission to access this resource',
+      },
+      { status: HttpStatus.FORBIDDEN }
+    );
+  }
+
+  return { session, user };
+}
