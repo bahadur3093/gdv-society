@@ -40,7 +40,7 @@ export async function POST(request: NextRequest) {
         password: hashedPassword,
         name: validatedData.name,
         plotNumber: validatedData.plotNumber || null,
-        role: 'USER', // Default role
+        role: 'RESIDENT', // Default role
         emailVerified: null, // User must be verified by admin before accessing dashboard
       },
       select: {

@@ -5,6 +5,8 @@ import { ResidentRequest, RequestType, RequestStatus, ResidentUser, AppConfigIte
 import { FileText, Send, Clock, CheckCircle, XCircle, Plus, User, DollarSign, FileSpreadsheet, Users, MessageSquare, RotateCcw, Loader2 } from 'lucide-react';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import Modal from '@/components/molecules/Modal';
+import ConfirmDialog from '@/components/molecules/ConfirmDialog';
+import ToastModal, { ToastState, closedToast, openToast } from '@/components/molecules/ToastModal';
 
 interface ResidentRequestsProps {
   currentUser?: ResidentUser;
@@ -61,6 +63,15 @@ export default function ResidentRequests({
   const [showReopenForm, setShowReopenForm] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [reopening, setReopening] = useState(false);
+
+  // Toast notification state
+  const [toast, setToast] = useState<ToastState>(closedToast());
+
+  // Confirm dialog for resolve action
+  const [confirmResolve, setConfirmResolve] = useState<{ isOpen: boolean; requestId: string }>(
+    { isOpen: false, requestId: '' }
+  );
+  const [resolveDialogLoading, setResolveDialogLoading] = useState(false);
 
   // Fetch requests on mount
   useEffect(() => {
@@ -193,13 +204,13 @@ export default function ResidentRequests({
 
   const handleSubmit = async () => {
     if (!selectedRequestType || !description.trim() || !currentUser) {
-      alert('Please fill in all required fields');
+      setToast(openToast('Missing Fields', 'Please fill in all required fields.', 'warning'));
       return;
     }
 
     if (selectedRequestType === 'ADD_FAMILY_MEMBER') {
       if (!familyMemberName.trim() || !familyMemberRelationship.trim() || !familyMemberContact.trim()) {
-        alert('Please fill in all family member details');
+        setToast(openToast('Missing Fields', 'Please fill in all family member details.', 'warning'));
         return;
       }
     }
@@ -242,7 +253,7 @@ export default function ResidentRequests({
       const data = await response.json();
 
       if (data.success) {
-        alert('Request submitted successfully!');
+        setToast(openToast('Request Submitted', 'Your request has been submitted successfully!', 'success'));
         // Reset form
         setSelectedRequestType('');
         setDescription('');
@@ -254,11 +265,11 @@ export default function ResidentRequests({
         // Refresh requests
         fetchRequests();
       } else {
-        alert(data.error || 'Failed to submit request');
+        setToast(openToast('Submission Failed', data.error || 'Failed to submit request', 'error'));
       }
     } catch (error) {
       console.error('Error submitting request:', error);
-      alert('An error occurred while submitting the request');
+      setToast(openToast('Error', 'An error occurred while submitting the request.', 'error'));
     } finally {
       setSubmitting(false);
     }
@@ -284,7 +295,7 @@ export default function ResidentRequests({
 
   const handleAddComment = async (requestId: string) => {
     if (!newComment.trim()) {
-      alert('Please enter a comment');
+      setToast(openToast('Comment Required', 'Please enter a comment before posting.', 'warning'));
       return;
     }
 
@@ -305,22 +316,19 @@ export default function ResidentRequests({
         // Refresh requests to update status
         fetchRequests();
       } else {
-        alert(data.error || 'Failed to add comment');
+        setToast(openToast('Failed to Add Comment', data.error || 'Failed to add comment', 'error'));
       }
     } catch (error) {
       console.error('Error adding comment:', error);
-      alert('An error occurred while adding the comment');
+      setToast(openToast('Error', 'An error occurred while adding the comment.', 'error'));
     } finally {
       setSubmittingComment(false);
     }
   };
 
   const handleResolveRequest = async (requestId: string) => {
-    if (!confirm('Are you sure you want to mark this request as resolved?')) {
-      return;
-    }
-
     try {
+      setResolveDialogLoading(true);
       setResolving(true);
       const response = await fetch(`/api/requests/${requestId}/resolve`, {
         method: 'POST',
@@ -329,23 +337,25 @@ export default function ResidentRequests({
       const data = await response.json();
 
       if (data.success) {
-        alert('Request marked as resolved');
+        setToast(openToast('Request Resolved', 'The request has been marked as resolved.', 'success'));
         setSelectedRequest(null);
         fetchRequests();
       } else {
-        alert(data.error || 'Failed to resolve request');
+        setToast(openToast('Resolve Failed', data.error || 'Failed to resolve request', 'error'));
       }
     } catch (error) {
       console.error('Error resolving request:', error);
-      alert('An error occurred while resolving the request');
+      setToast(openToast('Error', 'An error occurred while resolving the request.', 'error'));
     } finally {
       setResolving(false);
+      setResolveDialogLoading(false);
+      setConfirmResolve({ isOpen: false, requestId: '' });
     }
   };
 
   const handleReopenRequest = async (requestId: string) => {
     if (!reopenReason.trim()) {
-      alert('Please provide a reason for reopening this request');
+      setToast(openToast('Reason Required', 'Please provide a reason for reopening this request.', 'warning'));
       return;
     }
 
@@ -360,17 +370,17 @@ export default function ResidentRequests({
       const data = await response.json();
 
       if (data.success) {
-        alert('Request reopened successfully');
+        setToast(openToast('Request Reopened', 'The request has been reopened successfully.', 'success'));
         setReopenReason('');
         setShowReopenForm(false);
         setSelectedRequest(null);
         fetchRequests();
       } else {
-        alert(data.error || 'Failed to reopen request');
+        setToast(openToast('Reopen Failed', data.error || 'Failed to reopen request', 'error'));
       }
     } catch (error) {
       console.error('Error reopening request:', error);
-      alert('An error occurred while reopening the request');
+      setToast(openToast('Error', 'An error occurred while reopening the request.', 'error'));
     } finally {
       setReopening(false);
     }
@@ -663,7 +673,7 @@ export default function ResidentRequests({
                   </button>
                   {request.status !== 'RESOLVED' && request.status !== 'REJECTED' && (
                     <button
-                      onClick={() => handleResolveRequest(request.id)}
+                      onClick={() => setConfirmResolve({ isOpen: true, requestId: request.id })}
                       disabled={resolving}
                       className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-500 text-white font-medium rounded-lg transition-all duration-300 ease-in-out disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -852,6 +862,23 @@ export default function ResidentRequests({
           </div>
         </Modal>
       )}
+      {/* Confirm resolve dialog */}
+      <ConfirmDialog
+        isOpen={confirmResolve.isOpen}
+        onClose={() => setConfirmResolve({ isOpen: false, requestId: '' })}
+        onConfirm={() => handleResolveRequest(confirmResolve.requestId)}
+        title="Mark as Resolved"
+        message="Are you sure you want to mark this request as resolved? The resident will be notified."
+        variant="success"
+        confirmText="Mark Resolved"
+        loading={resolveDialogLoading}
+      />
+
+      {/* Toast notifications */}
+      <ToastModal
+        {...toast}
+        onClose={() => setToast(closedToast())}
+      />
     </div>
   );
 }

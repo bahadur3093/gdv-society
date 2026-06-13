@@ -1,6 +1,6 @@
 'use client';
 
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useState, Suspense } from 'react';
 import { AlertCircle, Loader2, Eye, EyeOff } from 'lucide-react';
@@ -78,8 +78,14 @@ function SignInForm() {
         setError('Invalid password. Please try again.');
         setIsLoading(false);
       } else {
-        router.push(callbackUrl);
-        router.refresh();
+          // After sign in, fetch session to determine verification status
+          const session = await getSession();
+          if (!session?.user?.emailVerified) {
+            router.push('/auth/verification-pending');
+          } else {
+            router.push(callbackUrl);
+          }
+          router.refresh();
       }
     } catch (err) {
       setError('An error occurred during sign in');
@@ -133,7 +139,12 @@ function SignInForm() {
         setError('Password set successfully, but login failed. Please try signing in again.');
         setIsLoading(false);
       } else {
-        router.push(callbackUrl);
+        const session = await getSession();
+        if (!session?.user?.emailVerified) {
+          router.push('/auth/verification-pending');
+        } else {
+          router.push(callbackUrl);
+        }
         router.refresh();
       }
     } catch (err) {

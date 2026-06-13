@@ -60,7 +60,7 @@ def safe_tool(func):
     a DB error would crash the MCP server.
     """
     @wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args, **kwargs):   
         logger.info(f"TOOL_CALL: {func.__name__} | args={kwargs}")
         try:
             result = func(*args, **kwargs)
@@ -115,15 +115,46 @@ def get_villa_details(villa_no: int) -> dict:
     conn = get_db()
     try:
         cur = conn.cursor()
+        # Join Villa, User, and FamilyMember tables
         cur.execute("""
-            SELECT "villaNo", "type", "areaInSqM", "areaInSqFt",
-                   "ownerName", "remarks"
-            FROM "Villa" WHERE "villaNo" = %s
+            SELECT 
+                v."villaNo", v."type", v."areaInSqM", v."areaInSqFt",
+                v."ownerName", v."remarks",
+                fm.name as "familyMemberName", fm.relationship, fm.contact
+            FROM "Villa" v
+            LEFT JOIN "User" u ON CAST(v."villaNo" AS text) = u."plotNumber"
+            LEFT JOIN "FamilyMember" fm ON u.id = fm."userId"
+            WHERE v."villaNo" = %s
         """, (villa_no,))
-        villa = cur.fetchone()
-        if not villa:
+        
+        villa_data = cur.fetchall()
+        if not villa_data:
             return {"error": f"Villa #{villa_no} not found"}
-        return dict(villa)
+        
+        # Convert rows to a structured dictionary with villaInfo and familyMembers
+        villa_info = {
+            "villaNo": villa_data[0]["villaNo"],
+            "type": villa_data[0]["type"],
+            "areaInSqM": villa_data[0]["areaInSqM"],
+            "areaInSqFt": villa_data[0]["areaInSqFt"],
+            "ownerName": villa_data[0]["ownerName"],
+            "remarks": villa_data[0]["remarks"]
+        }
+        
+        family_members = []
+        for row in villa_data:
+            family_member = {
+                "name": row.get("familyMemberName"),
+                "relationship": row.get("relationship"),
+                "contact": row.get("contact")
+            }
+            if any(family_member.values()):
+                family_members.append(family_member)
+        
+        return {
+            "villaInfo": villa_info,
+            "familyMembers": family_members
+        }
     finally:
         conn.close()
 
@@ -527,6 +558,62 @@ def add_monthly_expense(
     finally:
         conn.close()
 
+@mcp.tool()
+@safe_tool
+def add_family_member(
+    villaNo: int,
+    memberDetails: dict
+) -> dict:
+    """Add a family member to a resident's profile.
+    Args:
+        villaNo: The villa/plot number of the resident (e.g., 1, 2, 47)
+        memberDetails: A dict with keys 'name', 'relationship', and 'contact'
+    """
+    name = memberDetails.get("name")
+    relationship = memberDetails.get("relationship")
+    contact = memberDetails.get("contact")
+
+    if not all([name, relationship, contact]):
+        return {"error": "memberDetails must include name, relationship, and contact"}
+
+    conn = get_db()
+    try:
+        cur = conn.cursor()
+
+        # Find the user by villa number
+        cur.execute(
+            'SELECT id FROM "User" WHERE "plotNumber" = %s',
+            (str(villaNo),)
+        )
+        user = cur.fetchone()
+        if not user:
+            return {"error": f"No resident found for villa {villaNo}"}
+
+        # Insert the family member
+        cur.execute("""
+            INSERT INTO "FamilyMember" (id, "userId", name, relationship, contact, "addedAt", "updatedAt")
+            VALUES (
+                gen_random_uuid()::text, %s, %s, %s, %s, NOW(), NOW()
+            )
+            RETURNING id
+        """, (user["id"], name, relationship, contact))
+        result = cur.fetchone()
+        conn.commit()
+
+        logger.info(
+            f"FAMILY_MEMBER_WRITE: villa={villaNo}, member={name}, relationship={relationship}"
+        )
+
+        return {
+            "success": True,
+            "message": f"{relationship} '{name}' added to villa {villaNo}",
+            "id": result["id"]
+        }
+    except Exception as e:
+        conn.rollback()
+        raise
+    finally:
+        conn.close()
 
 # ──────────────────────────────────────────────
 # 🚀 RUN

@@ -1,0 +1,23 @@
+cd /Users/bahsingh/Dev/GitHub/gdv-society
+
+cat > .graphifyignore << 'EOF'
+# Skip docs and images that need an LLM API key
+*.md
+*.mdx
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.gif
+*.ico
+*.webp
+README*
+CHANGELOG*
+LICENSE*
+docs/
+public/
+.venv/
+.continue/
+*.toml
+
+EOF

@@ -1,6 +1,6 @@
 'use client';
 
-import { ScreenType, PendingRegistration, ResidentRequest } from '@/types';
+import { ScreenType, PendingRegistration } from '@/types';
 import { Table, UserPlus, Settings, FileText, Menu, X, LogOut, Users, Map, Database } from 'lucide-react';
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
@@ -28,9 +28,6 @@ interface AdministrativeWorkspaceProps {
   pendingRegistrations: PendingRegistration[];
   onApproveRegistration: (id: string) => void;
   onDeclineRegistration: (id: string) => void;
-  requests: ResidentRequest[];
-  onApproveRequest: (id: string, adminNotes?: string) => void;
-  onRejectRequest: (id: string, adminNotes?: string) => void;
 }
 
 const navItems = [
@@ -56,9 +53,6 @@ export default function AdministrativeWorkspace({
   pendingRegistrations,
   onApproveRegistration,
   onDeclineRegistration,
-  requests,
-  onApproveRequest,
-  onRejectRequest,
 }: AdministrativeWorkspaceProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -94,13 +88,7 @@ export default function AdministrativeWorkspace({
           />
         );
       case SCREENS.ADMIN_REQUESTS:
-        return (
-          <AdminRequestManagement
-            requests={requests}
-            onApproveRequest={onApproveRequest}
-            onRejectRequest={onRejectRequest}
-          />
-        );
+        return <AdminRequestManagement />;
       case SCREENS.CONFIG_MANAGEMENT:
         return <ConfigManagement />;
       case SCREENS.EXPENSE_MANAGER:

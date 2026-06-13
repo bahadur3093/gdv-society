@@ -15,7 +15,7 @@ model User {
   email         String    @unique
   password      String?   // Nullable to support password reset flow
   name          String
-  role          UserRole  @default(USER)
+  role          UserRole  @default(RESIDENT)
   emailVerified DateTime?
   plotNumber    String?
   createdAt     DateTime  @default(now())
@@ -35,7 +35,7 @@ model User {
 }
 
 enum UserRole {
-  USER
+  RESIDENT
   ADMIN
 }
 

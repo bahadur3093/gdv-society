@@ -56,7 +56,7 @@ async function main() {
       email: residentEmail,
       password: hashedResidentPassword,
       name: 'Nanda Kumar',
-      role: 'USER',
+      role: 'RESIDENT',
       plotNumber: '1',
       emailVerified: new Date(),
     },

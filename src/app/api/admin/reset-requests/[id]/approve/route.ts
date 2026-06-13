@@ -62,6 +62,14 @@ export async function POST(
       },
     });
 
+    // ALSO update the user's emailVerified status when approving
+    await prisma.user.update({
+      where: { id: resetRequest.userId },
+      data: {
+        emailVerified: new Date(),
+      },
+    });
+
     // Send password reset link to user (non-blocking)
     sendPasswordResetLink(resetRequest.user.email, resetRequest.user.name, token).catch(
       (error) => {

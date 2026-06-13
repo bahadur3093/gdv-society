@@ -49,7 +49,7 @@ export interface RequestComment {
   requestId: string;
   authorId: string;
   authorName: string;
-  authorRole: 'USER' | 'ADMIN';
+  authorRole: 'RESIDENT' | 'ADMIN';
   content: string;
   isAdminComment: boolean;
   createdAt: string;

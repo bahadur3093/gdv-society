@@ -4,13 +4,14 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useState, useCallback, useEffect } from 'react';
 import { Loader2 } from 'lucide-react';
-import { ScreenType, ResidentUser, PendingRegistration, ResidentRequest, RequestStatus } from '@/types';
+import { ScreenType, ResidentUser, PendingRegistration } from '@/types';
 import { DEFAULT_PER_SQFT_RATE, DEFAULT_SINKING_FUND_PERCENTAGE, SCREENS } from '@/utils';
 import { getPlotByNumber } from '@/data/plots';
 import ResidentWorkspace from '@/components/organisms/ResidentWorkspace';
 import AdministrativeWorkspace from '@/components/organisms/AdministrativeWorkspace';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchSocietySettings, selectSocietySettings, selectSocietySettingsLoading } from '@/store/slices/societySettingsSlice';
+import ToastModal, { ToastState, closedToast } from '@/components/molecules/ToastModal';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -25,7 +26,7 @@ export default function DashboardPage() {
   const [activeScreen, setActiveScreen] = useState<ScreenType>(SCREENS.DASHBOARD);
   const [currentUser, setCurrentUser] = useState<ResidentUser | undefined>(undefined);
   const [pendingRegistrations, setPendingRegistrations] = useState<PendingRegistration[]>([]);
-  const [residentRequests, setResidentRequests] = useState<ResidentRequest[]>([]);
+  const [toast, setToast] = useState<ToastState>(closedToast());
   
   // Get society settings from Redux store with fallback to defaults
   const perSqFtRate = settings?.perSqFtRate ?? DEFAULT_PER_SQFT_RATE;
@@ -94,49 +95,6 @@ export default function DashboardPage() {
     setPendingRegistrations(prev => prev.filter(reg => reg.id !== registrationId));
   }, []);
 
-  // Submit Request Handler (Resident)
-  const handleSubmitRequest = useCallback((requestData: Omit<ResidentRequest, 'id' | 'createdAt' | 'status'>) => {
-    const newRequest: ResidentRequest = {
-      ...requestData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      status: 'PENDING',
-    };
-    setResidentRequests(prev => [...prev, newRequest]);
-    alert('Request submitted successfully! The admin will review it shortly.');
-  }, []);
-
-  // Approve Request Handler (Admin)
-  const handleApproveRequest = useCallback((requestId: string, adminNotes?: string) => {
-    setResidentRequests(prev => prev.map(req => {
-      if (req.id === requestId) {
-        return {
-          ...req,
-          status: 'RESOLVED' as RequestStatus,
-          adminNotes,
-          updatedAt: new Date().toISOString(),
-          resolvedAt: new Date().toISOString(),
-        };
-      }
-      return req;
-    }));
-  }, []);
-
-  // Reject Request Handler (Admin)
-  const handleRejectRequest = useCallback((requestId: string, adminNotes?: string) => {
-    setResidentRequests(prev => prev.map(req => {
-      if (req.id === requestId) {
-        return {
-          ...req,
-          status: 'REJECTED' as RequestStatus,
-          adminNotes,
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return req;
-    }));
-  }, []);
-
   // Update Society Settings Handler (Admin) - These are now no-op since SocietyFinancialSettings component handles updates via Redux
   const handleUpdatePerSqFtRate = useCallback(async (rate: number) => {
     // This is now handled by SocietyFinancialSettings component via Redux
@@ -191,9 +149,6 @@ export default function DashboardPage() {
           pendingRegistrations={pendingRegistrations}
           onApproveRegistration={handleApproveRegistration}
           onDeclineRegistration={handleDeclineRegistration}
-          requests={residentRequests}
-          onApproveRequest={handleApproveRequest}
-          onRejectRequest={handleRejectRequest}
         />
       ) : (
         <ResidentWorkspace
@@ -201,10 +156,13 @@ export default function DashboardPage() {
           onScreenChange={setActiveScreen}
           currentUser={currentUser}
           perSqFtRate={perSqFtRate}
-          requests={residentRequests}
-          onSubmitRequest={handleSubmitRequest}
         />
       )}
+      {/* Toast notifications */}
+      <ToastModal
+        {...toast}
+        onClose={() => setToast(closedToast())}
+      />
     </main>
   );
 }

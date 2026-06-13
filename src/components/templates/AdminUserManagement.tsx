@@ -22,7 +22,7 @@ interface User {
   id: string;
   email: string;
   name: string;
-  role: 'USER' | 'ADMIN';
+  role: 'RESIDENT' | 'ADMIN';
   plotNumber?: string;
   emailVerified: string | null;
   createdAt: string;
@@ -49,7 +49,7 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
     email: '',
     password: '',
     plotNumber: '',
-    role: 'USER' as 'USER' | 'ADMIN'
+    role: 'RESIDENT' as 'RESIDENT' | 'ADMIN'
   });
   
   // Confirm Dialog State
@@ -121,7 +121,7 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
 
       setSuccess('User created successfully');
       setShowAddForm(false);
-      setNewUserData({ name: '', email: '', password: '', plotNumber: '', role: 'USER' });
+      setNewUserData({ name: '', email: '', password: '', plotNumber: '', role: 'RESIDENT' });
       fetchUsers(currentPage);
       onUserUpdate?.();
     } catch (err: any) {
@@ -368,7 +368,7 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
                 type="button"
                 onClick={() => {
                   setShowAddForm(false);
-                  setNewUserData({ name: '', email: '', password: '', plotNumber: '', role: 'USER' });
+                  setNewUserData({ name: '', email: '', password: '', plotNumber: '', role: 'RESIDENT' });
                 }}
                 className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
               >

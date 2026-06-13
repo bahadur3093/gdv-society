@@ -67,7 +67,7 @@ export const authConfig: NextAuthConfig = {
     error: '/auth/error',
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger }) {
       // Add user info to token on sign in
       if (user) {
         token.id = user.id;
@@ -77,6 +77,23 @@ export const authConfig: NextAuthConfig = {
         token.plotNumber = (user as AuthUser).plotNumber;
         token.emailVerified = (user as AuthUser).emailVerified;
       }
+
+      // On explicit session update (e.g. after "Refresh Status" is clicked),
+      // re-fetch emailVerified from the DB so stale JWT data is replaced.
+      if (trigger === 'update' && token.id) {
+        try {
+          const freshUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { emailVerified: true },
+          });
+          if (freshUser) {
+            token.emailVerified = freshUser.emailVerified;
+          }
+        } catch (err) {
+          console.error('[auth] jwt update trigger – DB fetch failed:', err);
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {
@@ -85,7 +102,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.id as string;
         session.user.email = token.email as string;
         session.user.name = token.name as string;
-        session.user.role = token.role as 'USER' | 'ADMIN';
+        session.user.role = token.role as 'RESIDENT' | 'ADMIN';
         session.user.plotNumber = token.plotNumber as string | undefined;
         session.user.emailVerified = token.emailVerified as Date | null;
       }

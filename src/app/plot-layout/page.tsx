@@ -20,7 +20,7 @@ export default function PlotLayoutPage() {
     }
 
     // Check if user is verified (for residents)
-    if (session.user.role === 'USER' && !session.user.emailVerified) {
+    if (session.user.role === 'RESIDENT' && !session.user.emailVerified) {
       router.push('/auth/verification-pending');
       return;
     }

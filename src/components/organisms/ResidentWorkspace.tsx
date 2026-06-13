@@ -20,8 +20,6 @@ interface ResidentWorkspaceProps {
   onScreenChange: (screen: ScreenType) => void;
   currentUser?: ResidentUser;
   perSqFtRate: number;
-  requests: ResidentRequest[];
-  onSubmitRequest: (requestData: Omit<ResidentRequest, 'id' | 'createdAt' | 'status'>) => void;
 }
 
 const navItems = [
@@ -38,8 +36,6 @@ export default function ResidentWorkspace({
   onScreenChange,
   currentUser,
   perSqFtRate,
-  requests,
-  onSubmitRequest,
 }: ResidentWorkspaceProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const router = useRouter();
@@ -66,8 +62,6 @@ export default function ResidentWorkspace({
         return (
           <ResidentRequests
             currentUser={currentUser}
-            requests={requests}
-            onSubmitRequest={onSubmitRequest}
           />
         );
       case SCREENS.PLOT_LAYOUT:

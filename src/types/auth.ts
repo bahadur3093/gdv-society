@@ -1,6 +1,6 @@
 // Authentication and Authorization Types
 
-export type UserRole = 'USER' | 'ADMIN';
+export type UserRole = 'RESIDENT' | 'ADMIN';
 
 export interface User {
   id: string;

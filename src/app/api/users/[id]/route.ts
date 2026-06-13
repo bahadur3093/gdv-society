@@ -1,23 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireOwnershipOrAdmin, requireAdmin } from '@/lib/auth/auth-helpers';
-import { updateUserSchema } from '@/lib/validation/user';
-import { validateRequest } from '@/lib/validation/common';
+import { requireAdmin } from '@/lib/auth/auth-helpers';
+import { z } from 'zod';
 import type { ApiResponse, User } from '@/types';
 import { HttpStatus } from '@/types';
 
+// Validation schema for updating a user
+const updateUserSchema = z.object({
+  name: z.string().min(1).optional(),
+  email: z.string().email().optional(),
+  plotNumber: z.string().optional().nullable(),
+  role: z.enum(['ADMIN', 'RESIDENT']).optional(),
+  emailVerified: z.string().datetime().optional().nullable(),
+});
+
+// Helper: build error response for auth errors
+function authError(message: string) {
+  const response: ApiResponse = { success: false, error: message };
+  return NextResponse.json(response, { status: HttpStatus.FORBIDDEN });
+}
+
+// GET /api/users/[id] — fetch a single user by id
 export async function GET(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Await params (Next.js 16+ requirement)
+    await requireAdmin();
     const { id } = await params;
-    
-    // Require ownership or admin access
-    await requireOwnershipOrAdmin(id);
 
-    // Fetch user details
     const user = await prisma.user.findUnique({
       where: { id },
       select: {
@@ -33,15 +44,11 @@ export async function GET(
     });
 
     if (!user) {
-      const response: ApiResponse = {
-        success: false,
-        error: 'User not found',
-      };
+      const response: ApiResponse = { success: false, error: 'User not found' };
       return NextResponse.json(response, { status: HttpStatus.NOT_FOUND });
     }
 
-    // Transform to API response format
-    const userData: User = {
+    const data: User = {
       id: user.id,
       email: user.email,
       name: user.name,
@@ -52,86 +59,49 @@ export async function GET(
       updatedAt: user.updatedAt.toISOString(),
     };
 
-    const response: ApiResponse<User> = {
-      success: true,
-      data: userData,
-    };
-
+    const response: ApiResponse<User> = { success: true, data };
     return NextResponse.json(response, { status: HttpStatus.OK });
   } catch (error: any) {
     console.error('Get user error:', error);
-
     if (error.message?.includes('Unauthorized') || error.message?.includes('Forbidden')) {
-      const response: ApiResponse = {
-        success: false,
-        error: error.message,
-      };
-      const status = error.message?.includes('Unauthorized')
-        ? HttpStatus.UNAUTHORIZED
-        : HttpStatus.FORBIDDEN;
-      return NextResponse.json(response, { status });
+      return authError(error.message);
     }
-
-    const response: ApiResponse = {
-      success: false,
-      error: 'Failed to fetch user',
-    };
+    const response: ApiResponse = { success: false, error: 'Failed to fetch user' };
     return NextResponse.json(response, { status: HttpStatus.INTERNAL_SERVER_ERROR });
   }
 }
 
+// PUT /api/users/[id] — update a user (admin only)
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Await params (Next.js 16+ requirement)
+    await requireAdmin();
     const { id } = await params;
-    
-    // Require ownership or admin access
-    await requireOwnershipOrAdmin(id);
 
-    // Parse and validate request body
     const body = await request.json();
-    const validatedData = validateRequest(updateUserSchema, body);
+    const parsed = updateUserSchema.safeParse(body);
 
-    // Get current user to check if email is actually changing
-    const currentUser = await prisma.user.findUnique({
-      where: { id },
-      select: { id: true, email: true, role: true },
-    });
-
-    if (!currentUser) {
+    if (!parsed.success) {
       const response: ApiResponse = {
         success: false,
-        error: 'User not found',
+        error: parsed.error.issues.map((e) => e.message).join(', '),
       };
-      return NextResponse.json(response, { status: HttpStatus.NOT_FOUND });
+      return NextResponse.json(response, { status: HttpStatus.BAD_REQUEST });
     }
 
-    // Check if email is being changed and if it's already taken by another user
-    if (validatedData.email && validatedData.email !== currentUser.email) {
-      const existingUser = await prisma.user.findUnique({
-        where: { email: validatedData.email },
-      });
+    const { emailVerified, ...rest } = parsed.data;
 
-      if (existingUser) {
-        const response: ApiResponse = {
-          success: false,
-          error: 'Email is already in use',
-        };
-        return NextResponse.json(response, { status: HttpStatus.CONFLICT });
-      }
-    }
-
-    // Prepare update data with proper type conversion for emailVerified
-    const updateData: Record<string, unknown> = { ...validatedData };
-    // emailVerified is handled separately by admin actions, not through this update endpoint
-
-    // Update user
     const user = await prisma.user.update({
       where: { id },
-      data: updateData,
+      data: {
+        ...rest,
+        // Convert string → Date (or null) for the emailVerified field
+        ...(emailVerified !== undefined
+          ? { emailVerified: emailVerified ? new Date(emailVerified) : null }
+          : {}),
+      },
       select: {
         id: true,
         email: true,
@@ -144,8 +114,7 @@ export async function PUT(
       },
     });
 
-    // Transform to API response format
-    const userData: User = {
+    const data: User = {
       id: user.id,
       email: user.email,
       name: user.name,
@@ -156,115 +125,45 @@ export async function PUT(
       updatedAt: user.updatedAt.toISOString(),
     };
 
-    const response: ApiResponse<User> = {
-      success: true,
-      data: userData,
-      message: 'User updated successfully',
-    };
-
+    const response: ApiResponse<User> = { success: true, data };
     return NextResponse.json(response, { status: HttpStatus.OK });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update user error:', error);
-
-    const errorObj = error as { statusCode?: number; message?: string };
-
-    if (errorObj.statusCode === 400) {
-      return NextResponse.json(error, { status: HttpStatus.BAD_REQUEST });
+    if (error.message?.includes('Unauthorized') || error.message?.includes('Forbidden')) {
+      return authError(error.message);
     }
-
-    if (errorObj.message?.includes('Unauthorized') || errorObj.message?.includes('Forbidden')) {
-      const response: ApiResponse = {
-        success: false,
-        error: errorObj.message,
-      };
-      const status = errorObj.message?.includes('Unauthorized')
-        ? HttpStatus.UNAUTHORIZED
-        : HttpStatus.FORBIDDEN;
-      return NextResponse.json(response, { status });
+    if (error.code === 'P2025') {
+      const response: ApiResponse = { success: false, error: 'User not found' };
+      return NextResponse.json(response, { status: HttpStatus.NOT_FOUND });
     }
-
-    const response: ApiResponse = {
-      success: false,
-      error: 'Failed to update user',
-    };
+    const response: ApiResponse = { success: false, error: 'Failed to update user' };
     return NextResponse.json(response, { status: HttpStatus.INTERNAL_SERVER_ERROR });
   }
 }
 
+// DELETE /api/users/[id] — delete a user (admin only)
 export async function DELETE(
-  request: NextRequest,
+  _request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    // Await params (Next.js 16+ requirement)
-    const { id } = await params;
-    
-    // Only admins can delete users
     await requireAdmin();
+    const { id } = await params;
 
-    // Fetch the user to check if they are an admin
-    const userToDelete = await prisma.user.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        role: true,
-        email: true,
-      },
-    });
+    await prisma.user.delete({ where: { id } });
 
-    if (!userToDelete) {
-      const response: ApiResponse = {
-        success: false,
-        error: 'User not found',
-      };
-      return NextResponse.json(response, { status: HttpStatus.NOT_FOUND });
-    }
-
-    // Prevent deletion of admin accounts
-    if (userToDelete.role === 'ADMIN') {
-      const response: ApiResponse = {
-        success: false,
-        error: 'Cannot delete admin accounts. Admin accounts can only be modified, not deleted.',
-      };
-      return NextResponse.json(response, { status: HttpStatus.FORBIDDEN });
-    }
-
-    // Delete user (cascade will handle related records)
-    await prisma.user.delete({
-      where: { id },
-    });
-
-    const response: ApiResponse = {
-      success: true,
-      message: 'User deleted successfully',
-    };
-
+    const response: ApiResponse = { success: true, data: null };
     return NextResponse.json(response, { status: HttpStatus.OK });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Delete user error:', error);
-
-    const errorObj = error as { message?: string; code?: string };
-
-    if (errorObj.message?.includes('Unauthorized') || errorObj.message?.includes('Forbidden')) {
-      const response: ApiResponse = {
-        success: false,
-        error: errorObj.message,
-      };
-      return NextResponse.json(response, { status: HttpStatus.FORBIDDEN });
+    if (error.message?.includes('Unauthorized') || error.message?.includes('Forbidden')) {
+      return authError(error.message);
     }
-
-    if (errorObj.code === 'P2025') {
-      const response: ApiResponse = {
-        success: false,
-        error: 'User not found',
-      };
+    if (error.code === 'P2025') {
+      const response: ApiResponse = { success: false, error: 'User not found' };
       return NextResponse.json(response, { status: HttpStatus.NOT_FOUND });
     }
-
-    const response: ApiResponse = {
-      success: false,
-      error: 'Failed to delete user',
-    };
+    const response: ApiResponse = { success: false, error: 'Failed to delete user' };
     return NextResponse.json(response, { status: HttpStatus.INTERNAL_SERVER_ERROR });
   }
 }

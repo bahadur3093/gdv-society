@@ -59,6 +59,8 @@ jspm_packages/
 next-env.d.ts
 
 # IDE and editor files
+.continue/
+graphify-out/
 .slingshot/
 .vscode/
 .idea/

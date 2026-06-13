@@ -1,5 +1,5 @@
 -- CreateEnum
-CREATE TYPE "UserRole" AS ENUM ('USER', 'ADMIN');
+CREATE TYPE "UserRole" AS ENUM ('RESIDENT', 'ADMIN');
 
 -- CreateEnum
 CREATE TYPE "ResetStatus" AS ENUM ('PENDING', 'APPROVED', 'COMPLETED', 'EXPIRED', 'DENIED');
@@ -22,7 +22,7 @@ CREATE TABLE "User" (
     "email" TEXT NOT NULL,
     "password" TEXT NOT NULL,
     "name" TEXT NOT NULL,
-    "role" "UserRole" NOT NULL DEFAULT 'USER',
+    "role" "UserRole" NOT NULL DEFAULT 'RESIDENT',
     "emailVerified" TIMESTAMP(3),
     "plotNumber" INTEGER,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

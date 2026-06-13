@@ -5,6 +5,7 @@ import { ResidentRequest, RequestType, RequestComment } from '@/types';
 import { FileText, CheckCircle, XCircle, Clock, Filter, Search, MessageSquare, User, DollarSign, FileSpreadsheet, Users, Send, Loader2, RotateCcw } from 'lucide-react';
 import ConfirmDialog from '@/components/molecules/ConfirmDialog';
 import Modal from '@/components/molecules/Modal';
+import ToastModal, { ToastState, closedToast, openToast } from '@/components/molecules/ToastModal';
 
 // interface AdminRequestManagementProps {}
 
@@ -42,7 +43,10 @@ export default function AdminRequestManagement() {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [resolving, setResolving] = useState(false);
   const [updating, setUpdating] = useState(false);
-  
+
+  // Toast notification state
+  const [toast, setToast] = useState<ToastState>(closedToast());
+
   // Confirm Dialog State
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
@@ -211,7 +215,7 @@ export default function AdminRequestManagement() {
 
   const handleAddComment = async (requestId: string) => {
     if (!newComment.trim()) {
-      alert('Please enter a comment');
+      setToast(openToast('Comment Required', 'Please enter a comment before posting.', 'warning'));
       return;
     }
 
@@ -232,11 +236,11 @@ export default function AdminRequestManagement() {
         // Refresh requests to update status
         fetchRequests();
       } else {
-        alert(data.error || 'Failed to add comment');
+        setToast(openToast('Failed to Add Comment', data.error || 'Failed to add comment', 'error'));
       }
     } catch (error) {
       console.error('Error adding comment:', error);
-      alert('An error occurred while adding the comment');
+      setToast(openToast('Error', 'An error occurred while adding the comment.', 'error'));
     } finally {
       setSubmittingComment(false);
     }
@@ -254,16 +258,16 @@ export default function AdminRequestManagement() {
       const data = await response.json();
 
       if (data.success) {
-        alert(`Request ${status.toLowerCase()} successfully`);
+        setToast(openToast('Status Updated', `Request marked as ${status.toLowerCase()} successfully.`, 'success'));
         setSelectedRequest(null);
         setAdminNotes('');
         fetchRequests();
       } else {
-        alert(data.error || 'Failed to update request');
+        setToast(openToast('Update Failed', data.error || 'Failed to update request', 'error'));
       }
     } catch (error) {
       console.error('Error updating request:', error);
-      alert('An error occurred while updating the request');
+      setToast(openToast('Error', 'An error occurred while updating the request.', 'error'));
     } finally {
       setUpdating(false);
     }
@@ -279,15 +283,15 @@ export default function AdminRequestManagement() {
       const data = await response.json();
 
       if (data.success) {
-        alert('Request marked as resolved');
+        setToast(openToast('Request Resolved', 'The request has been marked as resolved.', 'success'));
         setSelectedRequest(null);
         fetchRequests();
       } else {
-        alert(data.error || 'Failed to resolve request');
+        setToast(openToast('Resolve Failed', data.error || 'Failed to resolve request', 'error'));
       }
     } catch (error) {
       console.error('Error resolving request:', error);
-      alert('An error occurred while resolving the request');
+      setToast(openToast('Error', 'An error occurred while resolving the request.', 'error'));
     } finally {
       setResolving(false);
     }
@@ -332,7 +336,7 @@ export default function AdminRequestManagement() {
 
   const handleReject = (requestId: string) => {
     if (!adminNotes.trim()) {
-      alert('Please provide a reason for rejection in the admin notes.');
+      setToast(openToast('Admin Notes Required', 'Please provide a reason for rejection in the admin notes.', 'warning'));
       return;
     }
     
@@ -601,6 +605,12 @@ export default function AdminRequestManagement() {
         variant={confirmDialog.variant}
         confirmText={confirmDialog.confirmText}
         loading={dialogLoading}
+      />
+
+      {/* Toast notifications */}
+      <ToastModal
+        {...toast}
+        onClose={() => setToast(closedToast())}
       />
 
       {/* Request Details Modal */}

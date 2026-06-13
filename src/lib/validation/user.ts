@@ -8,6 +8,7 @@ export const updateUserSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').optional(),
   plotNumber: z.string().optional(),
   role: z.enum(['ADMIN', 'RESIDENT']).optional(),
+  emailVerified: z.string().optional(), // Accept string timestamp
 });
 
 export type UpdateUserSchema = z.infer<typeof updateUserSchema>;
