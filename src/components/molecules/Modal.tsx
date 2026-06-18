@@ -38,7 +38,6 @@ export default function Modal({
   closeOnEscape = true,
   className = '',
 }: ModalProps) {
-  // Handle ESC key to close modal
   const handleEscape = useCallback(
     (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen && closeOnEscape) {
@@ -108,7 +107,7 @@ export default function Modal({
         )}
 
         {/* Scrollable Body */}
-        <div className="ps-6 pe-4 overflow-y-auto flex-1 custom-scrollbar">
+        <div className="px-6 overflow-y-auto flex-1 custom-scrollbar">
           {children}
         </div>
 

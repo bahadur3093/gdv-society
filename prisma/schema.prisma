@@ -249,3 +249,38 @@ model MonthlyExpense {
   @@index([category])
 }
 
+// Announcement model for storing community announcements
+model Announcement {
+  id          String   @id @default(cuid())
+  title       String
+  content     String
+  category    String   // e.g., "General", "Maintenance", "Event"
+  priority    String   // "low", "medium", "high", "critical"
+  isActive    Boolean  @default(true)
+  publishDate DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  files AnnouncementFile[]
+
+  @@index([publishDate])
+  @@index([category])
+  @@index([priority])
+  @@index([isActive])
+}
+
+// File attachment for community announcements
+model AnnouncementFile {
+  id             String       @id @default(cuid())
+  announcementId String
+  url            String
+  name           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+}
+

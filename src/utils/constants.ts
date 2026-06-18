@@ -23,6 +23,7 @@ export const SCREENS = {
   PLOT_LAYOUT: 'plot-layout' as const,
   CONFIG_MANAGEMENT: 'config-management' as const,
   EXPENSE_MANAGER: 'expense-manager' as const,
+  ANNOUNCEMENTS: 'announcements' as const,
 };
 
 // Resident Navigation Items
@@ -32,7 +33,6 @@ export const RESIDENT_NAV_ITEMS = [
   { id: SCREENS.BREAKDOWN, label: 'Maintenance Breakdown', icon: 'Calculator' },
   { id: SCREENS.REQUESTS, label: 'My Requests', icon: 'FileText' },
   { id: SCREENS.PLOT_LAYOUT, label: 'Plot Layout Map', icon: 'Map' },
-  { id: SCREENS.EXPENSE_MANAGER, label: 'Expenses', icon: 'Database' },
 ];
 
 // Admin Navigation Items
@@ -42,9 +42,10 @@ export const ADMIN_NAV_ITEMS = [
   { id: SCREENS.USER_MANAGEMENT, label: 'User Management', icon: 'Users' },
   { id: SCREENS.SETTINGS, label: 'Settings', icon: 'Settings' },
   { id: SCREENS.ADMIN_REQUESTS, label: 'Requests', icon: 'FileText' },
-  { id: SCREENS.CONFIG_MANAGEMENT, label: 'Config Management', icon: 'Database' },
+  { id: SCREENS.CONFIG_MANAGEMENT, label: 'Config Management', icon: 'Cog' },
   { id: SCREENS.EXPENSE_MANAGER, label: 'Expense Manager', icon: 'Database' },
   { id: SCREENS.PLOT_LAYOUT, label: 'Plot Layout Map', icon: 'Map' },
+  { id: SCREENS.ANNOUNCEMENTS, label: 'Announcements', icon: 'Bell' },
 ];
 
 // Mock Ledger Entries for Demonstration
@@ -110,22 +111,22 @@ export const MOCK_ANNOUNCEMENTS = [
   {
     id: '1',
     title: 'Water Supply Maintenance',
-    message: 'Water supply will be temporarily interrupted on Sunday, May 26th from 10 AM to 2 PM for routine maintenance.',
-    date: '2026-05-20',
+    content: 'Water supply will be temporarily interrupted on Sunday, May 26th from 10 AM to 2 PM for routine maintenance.',
+    publishDate: '2026-05-20',
     priority: 'high' as const,
   },
   {
     id: '2',
     title: 'Community Meeting',
-    message: 'Monthly community meeting scheduled for June 1st at 6 PM in the community hall. All residents are encouraged to attend.',
-    date: '2026-05-18',
+    content: 'Monthly community meeting scheduled for June 1st at 6 PM in the community hall. All residents are encouraged to attend.',
+    publishDate: '2026-05-18',
     priority: 'medium' as const,
   },
   {
     id: '3',
     title: 'Gym Equipment Upgrade',
-    message: 'New cardio equipment has been installed in the community gym. Please follow the usage guidelines posted on-site.',
-    date: '2026-05-15',
+    content: 'New cardio equipment has been installed in the community gym. Please follow the usage guidelines posted on-site.',
+    publishDate: '2026-05-15',
     priority: 'low' as const,
   },
 ];

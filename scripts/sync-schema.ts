@@ -62,7 +62,70 @@ async function syncSchema() {
     console.log('  - remarks: TEXT (Optional)');
     console.log('  - createdAt: TIMESTAMP');
     console.log('  - updatedAt: TIMESTAMP');
-    console.log('\n🎉 Schema sync completed successfully!');
+    console.log('✅ Villa table and indexes created successfully!');
+    
+    console.log('📢 Creating Announcement and AnnouncementFile tables...');
+    
+    // Create Announcement table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "Announcement" (
+        "id" TEXT NOT NULL,
+        "title" TEXT NOT NULL,
+        "content" TEXT NOT NULL,
+        "category" TEXT NOT NULL,
+        "priority" TEXT NOT NULL,
+        "isActive" BOOLEAN NOT NULL DEFAULT TRUE,
+        "publishDate" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL,
+
+        CONSTRAINT "Announcement_pkey" PRIMARY KEY ("id")
+      );
+    `);
+
+    // Create AnnouncementFile table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS "AnnouncementFile" (
+        "id" TEXT NOT NULL,
+        "announcementId" TEXT NOT NULL,
+        "url" TEXT NOT NULL,
+        "name" TEXT NOT NULL,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL,
+
+        CONSTRAINT "AnnouncementFile_pkey" PRIMARY KEY ("id")
+      );
+    `);
+
+    console.log('📇 Creating Announcement indexes and foreign keys...');
+    
+    // Create Announcement indexes
+    await pool.query(`CREATE INDEX IF NOT EXISTS "Announcement_publishDate_idx" ON "Announcement"("publishDate");`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "Announcement_category_idx" ON "Announcement"("category");`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "Announcement_priority_idx" ON "Announcement"("priority");`);
+    await pool.query(`CREATE INDEX IF NOT EXISTS "Announcement_isActive_idx" ON "Announcement"("isActive");`);
+
+    // Create AnnouncementFile indexes
+    await pool.query(`CREATE INDEX IF NOT EXISTS "AnnouncementFile_announcementId_idx" ON "AnnouncementFile"("announcementId");`);
+
+    // Add foreign key constraint safely
+    try {
+      await pool.query(`
+        ALTER TABLE "AnnouncementFile" 
+        ADD CONSTRAINT "AnnouncementFile_announcementId_fkey" 
+        FOREIGN KEY ("announcementId") 
+        REFERENCES "Announcement"("id") 
+        ON DELETE CASCADE ON UPDATE CASCADE;
+      `);
+    } catch (fkError: any) {
+      if (fkError.code === '42710') {
+        console.log('  - Foreign key constraint already exists, skipping.');
+      } else {
+        throw fkError;
+      }
+    }
+
+    console.log('✅ Announcement tables and constraints created successfully!');
     
   } catch (error: any) {
     console.error('❌ Error syncing schema:', error.message);

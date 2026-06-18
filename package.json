@@ -17,6 +17,7 @@
     "migrate:villas": "dotenv -e .env tsx scripts/migrate-villas.ts"
   },
   "dependencies": {
+    "@auth/prisma-adapter": "^2.11.2",
     "@neondatabase/serverless": "^1.1.0",
     "@prisma/adapter-neon": "^7.8.0",
     "@prisma/client": "^7.8.0",
@@ -34,6 +35,7 @@
     "react": "19.2.7",
     "react-dom": "19.2.7",
     "react-redux": "^9.3.0",
+    "swr": "^2.4.1",
     "tailwind-merge": "^3.6.0",
     "ws": "^8.21.0",
     "zod": "^4.4.3"

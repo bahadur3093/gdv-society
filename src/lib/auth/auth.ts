@@ -1,114 +1,68 @@
-import { NextAuthConfig } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
-import { prisma } from '@/lib/prisma';
-import { verifyPassword } from '@/lib/utils/password';
-import type { AuthUser } from '@/types';
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import bcrypt from "bcryptjs";
+import { prisma } from "@/lib/prisma";
 
-export const authConfig: NextAuthConfig = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
+  pages: { signIn: "/login" },
   providers: [
-    CredentialsProvider({
-      name: 'credentials',
+    Credentials({
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: {},
+        password: {},
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          throw new Error('Email and password are required');
-        }
+        if (!credentials?.email || !credentials?.password) return null;
 
-        try {
-          // Find user by email
-          const user = await prisma.user.findUnique({
-            where: { email: credentials.email as string },
-          });
+        const user = await prisma.user.findUnique({
+          where: { email: credentials.email as string },
+        });
+        if (!user || !user.password) return null;
 
-          if (!user) {
-            throw new Error('Invalid email or password');
-          }
+        const valid = await bcrypt.compare(
+          credentials.password as string,
+          user.password
+        );
+        if (!valid) return null;
 
-          // Check if user has a password set
-          if (!user.password) {
-            throw new Error('Password not set. Please use password reset.');
-          }
-
-          // Verify password
-          const isValidPassword = await verifyPassword(
-            credentials.password as string,
-            user.password
-          );
-
-          if (!isValidPassword) {
-            throw new Error('Invalid email or password');
-          }
-
-          // Return user object (without password) including emailVerified status
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role,
-            plotNumber: user.plotNumber,
-            emailVerified: user.emailVerified,
-          } as AuthUser;
-        } catch (error) {
-          console.error('Authentication error:', error);
-          throw new Error('Authentication failed');
-        }
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          plotNumber: user.plotNumber,
+        } as any;
       },
     }),
   ],
-  session: {
-    strategy: 'jwt',
-    maxAge: 24 * 60 * 60, // 24 hours
-  },
-  pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
-  },
   callbacks: {
-    async jwt({ token, user, trigger }) {
-      // Add user info to token on sign in
+    async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.email = user.email;
-        token.name = user.name;
-        token.role = (user as AuthUser).role;
-        token.plotNumber = (user as AuthUser).plotNumber;
-        token.emailVerified = (user as AuthUser).emailVerified;
+        token.role = user.role;
+        token.plotNumber = user.plotNumber;
       }
-
-      // On explicit session update (e.g. after "Refresh Status" is clicked),
-      // re-fetch emailVerified from the DB so stale JWT data is replaced.
-      if (trigger === 'update' && token.id) {
-        try {
-          const freshUser = await prisma.user.findUnique({
-            where: { id: token.id as string },
-            select: { emailVerified: true },
-          });
-          if (freshUser) {
-            token.emailVerified = freshUser.emailVerified;
-          }
-        } catch (err) {
-          console.error('[auth] jwt update trigger – DB fetch failed:', err);
-        }
-      }
-
       return token;
     },
     async session({ session, token }) {
-      // Add user info from token to session
-      if (token && session.user) {
-        session.user.id = token.id as string;
-        session.user.email = token.email as string;
-        session.user.name = token.name as string;
-        session.user.role = token.role as 'RESIDENT' | 'ADMIN';
-        session.user.plotNumber = token.plotNumber as string | undefined;
-        session.user.emailVerified = token.emailVerified as Date | null;
+      if (session.user) {
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.plotNumber = token.plotNumber;
       }
       return session;
     },
+    authorized({ auth, request: { nextUrl } }) {
+      const isLoggedIn = !!auth?.user;
+      const role = auth?.user?.role;
+      const path = nextUrl.pathname;
+
+      if (path.startsWith("/admin")) return isLoggedIn && role === "ADMIN";
+      if (path.startsWith("/resident")) return isLoggedIn;
+      return true;
+    },
   },
-  secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development',
-};
+});

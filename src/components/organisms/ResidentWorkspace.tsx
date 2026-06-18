@@ -1,10 +1,9 @@
 'use client';
 
-import { ScreenType, ResidentUser, ResidentRequest } from '@/types';
+import { ScreenType, ResidentUser } from '@/types';
 import { LayoutDashboard, Receipt, Calculator, FileText, Menu, X, LogOut, Map, Database } from 'lucide-react';
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { SCREENS } from '@/utils';
 
 // Import screen components
@@ -27,8 +26,8 @@ const navItems = [
   { id: SCREENS.LEDGER, label: 'Ledger', icon: Receipt },
   { id: SCREENS.BREAKDOWN, label: 'Maintenance', icon: Calculator },
   { id: SCREENS.REQUESTS, label: 'Requests', icon: FileText },
-  { id: SCREENS.PLOT_LAYOUT, label: 'Plot Layout Map', icon: Map },
-  { id: SCREENS.EXPENSE_MANAGER, label: 'Expense Manager', icon: Database },
+  { id: SCREENS.PLOT_LAYOUT, label: 'Layout', icon: Map },
+  { id: SCREENS.EXPENSE_MANAGER, label: 'Expense', icon: Database },
 ];
 
 export default function ResidentWorkspace({
@@ -38,7 +37,6 @@ export default function ResidentWorkspace({
   perSqFtRate,
 }: ResidentWorkspaceProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const router = useRouter();
 
   const renderContent = () => {
     switch (activeScreen) {
@@ -46,7 +44,6 @@ export default function ResidentWorkspace({
         return (
           <DashboardSummary
             currentUser={currentUser}
-            perSqFtRate={perSqFtRate}
           />
         );
       case SCREENS.LEDGER:
@@ -89,9 +86,8 @@ export default function ResidentWorkspace({
 
       {/* Sidebar Navigation */}
       <aside
-        className={`${
-          mobileMenuOpen ? 'block' : 'hidden'
-        } lg:block lg:w-64 bg-slate-900/30 border-r border-slate-800/40 lg:min-h-screen transition-all duration-300 ease-in-out`}
+        className={`${mobileMenuOpen ? 'block' : 'hidden'
+          } lg:block lg:w-64 bg-slate-900/30 border-r border-slate-800/40 lg:min-h-screen transition-all duration-300 ease-in-out`}
       >
         <div className="p-6 sticky top-0">
           <div className="hidden lg:block mb-8">
@@ -124,11 +120,10 @@ export default function ResidentWorkspace({
                     onScreenChange(item.id);
                     setMobileMenuOpen(false);
                   }}
-                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ease-in-out ${
-                    isActive
+                  className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ease-in-out ${isActive
                       ? 'bg-violet-600 text-white shadow-lg'
                       : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/50'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-5 h-5" />
                   {item.label}

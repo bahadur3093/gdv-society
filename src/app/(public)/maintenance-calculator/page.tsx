@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card } from '@/components/atoms/Card';
 import { Input } from '@/components/atoms/Input';
 import { Button } from '@/components/atoms/Button';
@@ -14,18 +14,12 @@ import type { PlotData } from '@/types';
 import { Menu, X } from 'lucide-react';
 import { PageLoader } from '@/components';
 
-/**
- * Expense item interface
- */
 interface ExpenseItem {
   id: string;
   name: string;
   value: number;
 }
 
-/**
- * Villa calculation result
- */
 interface VillaCalculation {
   villaNo: number;
   ownerName: string;
@@ -36,14 +30,7 @@ interface VillaCalculation {
   flatRate: number;
 }
 
-/**
- * Maintenance Calculator Page
- * 
- * Public page for calculating maintenance costs (fixed and hybrid) for villas.
- * Users can add custom expenses and select which are fixed to generate calculations.
- */
 export default function MaintenanceCalculatorPage() {
-  // State for expenses
   const [expenses, setExpenses] = useState<ExpenseItem[]>([
     { id: '1', name: 'Security', value: 63000 },
     { id: '2', name: 'Electricity', value: 25000 },
@@ -53,18 +40,14 @@ export default function MaintenanceCalculatorPage() {
     { id: '6', name: 'Emergency fund', value: 21000 },
   ]);
   
-  // State for fixed expense IDs
   const [fixedExpenseIds, setFixedExpenseIds] = useState<Set<string>>(new Set(['1', '2']));
   
-  // State for villa data
   const [villas, setVillas] = useState<PlotData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  // State for mobile side panel
   const [isSidePanelOpen, setIsSidePanelOpen] = useState(false);
 
-  // Fetch villa data from API
   useEffect(() => {
     const fetchVillas = async () => {
       try {
@@ -93,12 +76,9 @@ export default function MaintenanceCalculatorPage() {
     fetchVillas();
   }, []);
 
-  // Calculate totals and per-villa costs
   const calculations = useMemo(() => {
-    // Calculate total expenses
     const totalExpenses = expenses.reduce((sum, exp) => sum + exp.value, 0);
     
-    // Calculate fixed and hybrid expenses
     const fixedExpenses = expenses
       .filter(exp => fixedExpenseIds.has(exp.id))
       .reduce((sum, exp) => sum + exp.value, 0);
@@ -107,38 +87,30 @@ export default function MaintenanceCalculatorPage() {
       .filter(exp => !fixedExpenseIds.has(exp.id))
       .reduce((sum, exp) => sum + exp.value, 0);
     
-    // Calculate total square footage (excluding villa 1 and not occupied villas)
     const totalSquareFootage = villas
       .filter(villa => villa.villaNo !== 1 && villa.ownerName !== 'Not Occupied')
       .reduce((sum, villa) => sum + villa.areaInSqFt, 0);
     
-    // Calculate maintenance cost per sq ft (from total expenses)
     const maintenanceCostPerSqFt = calculateMaintenanceCostPerSqFt(
       totalExpenses,
       totalSquareFootage
     );
     
-    // Calculate hybrid cost per sq ft (from hybrid expenses only)
     const hybridCostPerSqFt = calculateMaintenanceCostPerSqFt(
       hybridExpenses,
       totalSquareFootage
     );
     
-    // Calculate fixed expense per villa
     const fixedExpensePerVilla = calculateFixedExpensePerVilla(
       fixedExpenses,
       villas.length
     );
-    
-    // Calculate per-villa costs
     const villaCalculations: VillaCalculation[] = villas.map(villa => {
-      // Variable amount based on hybrid cost per sq ft
       const variableAmount = calculateFlatRateMaintenance(
         villa.areaInSqFt,
         hybridCostPerSqFt
       );
       
-      // Hybrid Total = Fixed Expense + Variable Amount
       const hybridExpense = fixedExpensePerVilla + variableAmount;
       
       const flatRate = calculateFlatRateMaintenance(
@@ -169,7 +141,6 @@ export default function MaintenanceCalculatorPage() {
     };
   }, [expenses, fixedExpenseIds, villas]);
 
-  // Add new expense
   const handleAddExpense = () => {
     const newExpense: ExpenseItem = {
       id: Date.now().toString(),
@@ -179,21 +150,18 @@ export default function MaintenanceCalculatorPage() {
     setExpenses([...expenses, newExpense]);
   };
 
-  // Update expense name
   const handleExpenseNameChange = (id: string, name: string) => {
     setExpenses(expenses.map(exp => 
       exp.id === id ? { ...exp, name } : exp
     ));
   };
 
-  // Update expense value
   const handleExpenseValueChange = (id: string, value: number) => {
     setExpenses(expenses.map(exp => 
       exp.id === id ? { ...exp, value } : exp
     ));
   };
 
-  // Remove expense
   const handleRemoveExpense = (id: string) => {
     setExpenses(expenses.filter(exp => exp.id !== id));
     setFixedExpenseIds(prev => {
@@ -203,7 +171,6 @@ export default function MaintenanceCalculatorPage() {
     });
   };
 
-  // Toggle fixed expense
   const handleToggleFixedExpense = (id: string) => {
     setFixedExpenseIds(prev => {
       const newSet = new Set(prev);
@@ -216,7 +183,6 @@ export default function MaintenanceCalculatorPage() {
     });
   };
 
-  // Format currency
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -227,7 +193,7 @@ export default function MaintenanceCalculatorPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 text-slate-100 transition-all duration-300 ease-in-out p-6 flex items-center justify-center">
         <PageLoader />
       </div>
     );
@@ -235,7 +201,7 @@ export default function MaintenanceCalculatorPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-background p-6 flex items-center justify-center">
+      <div className="min-h-screen bg-slate-950 text-slate-100 transition-all duration-300 ease-in-out p-6 flex items-center justify-center">
         <Card variant="basic" elevation="medium" padding="lg" className="max-w-md">
           <Typography variant="h3" className="text-red-500 mb-4">
             Error
@@ -249,8 +215,7 @@ export default function MaintenanceCalculatorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Mobile Menu Toggle Icon - Top Right */}
+    <div className="min-h-screen bg-slate-950 text-slate-100 transition-all duration-300 ease-in-out">
       <button
         onClick={() => setIsSidePanelOpen(!isSidePanelOpen)}
         className="md:hidden fixed top-4 right-4 z-50 bg-brand-primary text-white p-3 rounded-full shadow-lg hover:bg-brand-primary/90 transition-colors"
@@ -259,7 +224,6 @@ export default function MaintenanceCalculatorPage() {
         {isSidePanelOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
 
-      {/* Mobile Side Panel Overlay */}
       {isSidePanelOpen && (
         <div
           className="md:hidden fixed inset-0 bg-black/50 z-40"
@@ -267,7 +231,6 @@ export default function MaintenanceCalculatorPage() {
         />
       )}
 
-      {/* Side Panel - Mobile Drawer / Desktop Inline */}
       <div
         className={`
           fixed md:static top-0 left-0 h-full md:h-auto
@@ -281,7 +244,6 @@ export default function MaintenanceCalculatorPage() {
         `}
       >
         <div className="p-4 md:p-1 md:max-w-7xl md:mx-auto">
-          {/* Header - Only in mobile side panel */}
           <div className="md:hidden mb-6 pt-12">
             <Typography variant="h2" className="mb-2 text-xl">
               Configuration
@@ -291,7 +253,6 @@ export default function MaintenanceCalculatorPage() {
             </Typography>
           </div>
 
-          {/* Expense Configuration */}
           <Card variant="basic" elevation="medium" padding="lg">
           <div className="space-y-4 sm:space-y-6">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 sm:gap-0">
@@ -306,7 +267,6 @@ export default function MaintenanceCalculatorPage() {
               </Button>
             </div>
 
-            {/* Expenses List */}
             <div className="space-y-3 sm:space-y-4">
               {expenses.map((expense) => (
                 <div
@@ -361,10 +321,8 @@ export default function MaintenanceCalculatorPage() {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="p-3 sm:p-4 md:p-6">
         <div className="max-w-7xl mx-auto space-y-4 sm:space-y-6">
-          {/* Header - Desktop Only */}
           <div className="hidden md:block text-center mb-4 sm:mb-6 md:mb-8">
             <Typography variant="h1" className="mb-2 text-2xl sm:text-3xl md:text-4xl lg:text-5xl">
               Maintenance Calculator
@@ -374,14 +332,12 @@ export default function MaintenanceCalculatorPage() {
             </Typography>
           </div>
 
-          {/* Mobile Header - Compact */}
           <div className="md:hidden text-center mb-4 pt-16">
             <Typography variant="h1" className="mb-2 text-2xl">
               Maintenance Calculator
             </Typography>
           </div>
 
-          {/* Summary Statistics */}
           <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4">
           <Card variant="statistics" elevation="medium" padding="lg" className="p-4 sm:p-6">
             <Typography variant="small" className="text-text-muted mb-2 text-xs sm:text-sm">
@@ -438,7 +394,6 @@ export default function MaintenanceCalculatorPage() {
           </Card>
         </div>
 
-        {/* Villa Calculations Table */}
         <Card variant="basic" elevation="medium" padding="lg" className="p-3 sm:p-4 md:p-6">
           <Typography variant="h3" className="mb-4 sm:mb-6 text-lg sm:text-xl md:text-2xl">
             Villa-wise Maintenance Breakdown
@@ -482,7 +437,7 @@ export default function MaintenanceCalculatorPage() {
                         <td className="py-2 sm:py-3 px-2 sm:px-4 font-medium text-xs sm:text-sm whitespace-nowrap">
                           {villa.villaNo}
                         </td>
-                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm max-w-[100px] sm:max-w-none truncate">
+                        <td className="py-2 sm:py-3 px-2 sm:px-4 text-xs sm:text-sm max-w-25 sm:max-w-none truncate">
                           {villa.ownerName}
                         </td>
                         <td className="py-2 sm:py-3 px-2 sm:px-4 text-right text-xs sm:text-sm whitespace-nowrap">
@@ -513,9 +468,7 @@ export default function MaintenanceCalculatorPage() {
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-right font-bold text-sm sm:text-base md:text-lg whitespace-nowrap">
                         {calculations.villaCalculations.reduce((sum, villa) => sum + villa.areaInSqFt, 0).toLocaleString()}
                       </td>
-                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-right">
-                        {/* Fixed Expense - no total needed */}
-                      </td>
+                      <td className="py-3 sm:py-4 px-2 sm:px-4 text-right"></td>
                       <td className="py-3 sm:py-4 px-2 sm:px-4 text-right font-bold text-sm sm:text-base md:text-lg text-blue-600 whitespace-nowrap">
                         {formatCurrency(calculations.villaCalculations.reduce((sum, villa) => sum + villa.variableAmount, 0))}
                       </td>
@@ -533,7 +486,6 @@ export default function MaintenanceCalculatorPage() {
           </div>
         </Card>
 
-        {/* Calculation Formulas */}
         <Card variant="basic" elevation="low" padding="lg" className="bg-surface/50 p-3 sm:p-4 md:p-6">
           <Typography variant="h4" className="mb-3 sm:mb-4 text-base sm:text-lg md:text-xl">
             Calculation Formulas

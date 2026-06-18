@@ -1,7 +1,7 @@
 'use client';
 
 import { ScreenType, PendingRegistration } from '@/types';
-import { Table, UserPlus, Settings, FileText, Menu, X, LogOut, Users, Map, Database } from 'lucide-react';
+import { Table, UserPlus, Settings, FileText, Menu, X, LogOut, Users, Map, Database, Bell, Cog } from 'lucide-react';
 import { useState } from 'react';
 import { signOut } from 'next-auth/react';
 import { SCREENS } from '@/utils';
@@ -15,6 +15,7 @@ import AdminUserManagement from '@/components/templates/AdminUserManagement';
 import PlotLayoutMap from '@/components/templates/PlotLayoutMap';
 import ConfigManagement from '@/components/templates/ConfigManagement';
 import ExpenseManager from '@/components/templates/ExpenseManager';
+import AnnouncementManager from '../templates/AnnouncementManager';
 
 interface AdministrativeWorkspaceProps {
   activeScreen: ScreenType;
@@ -31,14 +32,15 @@ interface AdministrativeWorkspaceProps {
 }
 
 const navItems = [
-  { id: SCREENS.MASTER_LEDGER, label: 'Villa Ledger', icon: Table },
-  { id: SCREENS.ONBOARDING, label: 'Villa Onboarding', icon: UserPlus },
-  { id: SCREENS.USER_MANAGEMENT, label: 'User Management', icon: Users },
+  { id: SCREENS.MASTER_LEDGER, label: 'Ledger', icon: Table },
+  { id: SCREENS.ONBOARDING, label: 'Onboarding', icon: UserPlus },
+  { id: SCREENS.USER_MANAGEMENT, label: 'Residents', icon: Users },
   { id: SCREENS.SETTINGS, label: 'Settings', icon: Settings },
   { id: SCREENS.ADMIN_REQUESTS, label: 'Requests', icon: FileText },
-  { id: SCREENS.CONFIG_MANAGEMENT, label: 'Config Management', icon: Database },
-  { id: SCREENS.EXPENSE_MANAGER, label: 'Expense Manager', icon: Database },
-  { id: SCREENS.PLOT_LAYOUT, label: 'Plot Layout Map', icon: Map },
+  { id: SCREENS.CONFIG_MANAGEMENT, label: 'Config', icon: Cog },
+  { id: SCREENS.EXPENSE_MANAGER, label: 'Expense', icon: Database },
+  { id: SCREENS.PLOT_LAYOUT, label: 'Layout', icon: Map },
+  { id: SCREENS.ANNOUNCEMENTS, label: 'Announcements', icon: Bell },
 ];
 
 export default function AdministrativeWorkspace({
@@ -95,6 +97,8 @@ export default function AdministrativeWorkspace({
         return <ExpenseManager isAdmin={true} />;
       case SCREENS.PLOT_LAYOUT:
         return <PlotLayoutMap userRole="admin" />;
+      case SCREENS.ANNOUNCEMENTS:
+        return <AnnouncementManager userRole="admin" />;
       default:
         return null;
     }

@@ -12,7 +12,7 @@ export type { DbUser, DbSession, DbPasswordResetRequest, DbResidentRequest, DbFa
 
 // Application State Types
 export type AccountStatus = 'pending' | 'approved';
-export type ScreenType = 'auth' | 'pending' | 'dashboard' | 'ledger' | 'breakdown' | 'master-ledger' | 'onboarding' | 'settings' | 'requests' | 'admin-requests' | 'user-management' | 'plot-layout' | 'config-management' | 'expense-manager';
+export type ScreenType = 'auth' | 'pending' | 'dashboard' | 'ledger' | 'breakdown' | 'master-ledger' | 'onboarding' | 'settings' | 'requests' | 'admin-requests' | 'user-management' | 'plot-layout' | 'config-management' | 'expense-manager' | 'announcements';
 
 // Request Types
 export type RequestType = 'PLOT_SIZE_UPDATE' | 'PAYMENT_ISSUE' | 'EXPENSE_SHEET_MONTHLY' | 'EXPENSE_SHEET_YEARLY' | 'ADD_FAMILY_MEMBER' | 'PASSWORD_RESET';

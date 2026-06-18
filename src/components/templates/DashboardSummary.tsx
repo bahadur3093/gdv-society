@@ -1,30 +1,47 @@
-'use client';
+"use client";
 
-import { ResidentUser } from '@/types';
-import { formatCurrency, formatArea, calculateAnnualMaintenance, MOCK_ANNOUNCEMENTS } from '@/utils';
-import { TrendingUp, AlertCircle, Bell } from 'lucide-react';
+import AnnouncementsWrapper from "@/app/announcements/announcements-wrapper";
+import { api_get } from "@/lib/services/api";
+import { ResidentUser } from "@/types";
+import { Announcement } from "@/types/announcements";
+import {
+  formatCurrency,
+  formatArea,
+  calculateAnnualMaintenance,
+} from "@/utils";
+import { TrendingUp, AlertCircle } from "lucide-react";
+import useSWR from "swr";
+import { PageLoader } from "../atoms";
+import Alert from "../atoms/Alert";
 
 interface DashboardSummaryProps {
   currentUser?: ResidentUser;
-  perSqFtRate: number;
 }
 
-export default function DashboardSummary({ currentUser, perSqFtRate }: DashboardSummaryProps) {
-  console.log('[DashboardSummary] Rendering with:', {
-    hasCurrentUser: !!currentUser,
-    hasPlotData: !!currentUser?.plotData,
-    perSqFtRate,
+export default function DashboardSummary({
+  currentUser
+}: DashboardSummaryProps) {
+  const {
+    data: announcements,
+    error,
+    isLoading,
+    mutate: refetchAnnouncements
+  } = useSWR<Announcement[]>("api/announcement", api_get, {
+    fallbackData: [],
+    revalidateOnFocus: false,
   });
 
   if (!currentUser || !currentUser.plotData) {
-    console.warn('[DashboardSummary] Missing user or plot data:', {
+    console.warn("[DashboardSummary] Missing user or plot data:", {
       currentUser,
       plotData: currentUser?.plotData,
     });
     return (
       <div className="text-center py-12">
         <p className="text-slate-400">No user data available</p>
-        <p className="text-xs text-slate-500 mt-2">Please contact support if this persists</p>
+        <p className="text-xs text-slate-500 mt-2">
+          Please contact support if this persists
+        </p>
       </div>
     );
   }
@@ -38,7 +55,9 @@ export default function DashboardSummary({ currentUser, perSqFtRate }: Dashboard
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-slate-100 mb-2">Dashboard Summary</h1>
+        <h1 className="text-3xl font-bold text-slate-100 mb-2">
+          Dashboard Summary
+        </h1>
         <p className="text-slate-400">Welcome back, {currentUser.fullName}</p>
       </div>
 
@@ -48,8 +67,12 @@ export default function DashboardSummary({ currentUser, perSqFtRate }: Dashboard
         <div className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-6 hover:border-violet-500/30 transition-all duration-300">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-sm text-slate-400 mb-1">Annual Maintenance Cost</p>
-              <p className="text-xs text-slate-500">For {formatArea(plotData.areaInSqFt)}</p>
+              <p className="text-sm text-slate-400 mb-1">
+                Annual Maintenance Cost
+              </p>
+              <p className="text-xs text-slate-500">
+                For {formatArea(plotData.areaInSqFt)}
+              </p>
             </div>
             <TrendingUp className="w-5 h-5 text-violet-400" />
           </div>
@@ -65,7 +88,9 @@ export default function DashboardSummary({ currentUser, perSqFtRate }: Dashboard
         <div className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-6 hover:border-cyan-500/30 transition-all duration-300">
           <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-sm text-slate-400 mb-1">Current Outstanding Dues</p>
+              <p className="text-sm text-slate-400 mb-1">
+                Current Outstanding Dues
+              </p>
               <p className="text-xs text-slate-500">As of today</p>
             </div>
             <AlertCircle className="w-5 h-5 text-cyan-400" />
@@ -81,11 +106,13 @@ export default function DashboardSummary({ currentUser, perSqFtRate }: Dashboard
         {/* Plot Information */}
         <div className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-6 hover:border-indigo-500/30 transition-all duration-300">
           <div className="flex items-start justify-between mb-4">
-              <div>
-                <p className="text-sm text-slate-400 mb-1">Your Plot Details</p>
-                <p className="text-xs text-slate-500">Villa #{plotData.villaNo}</p>
-              </div>
+            <div>
+              <p className="text-sm text-slate-400 mb-1">Your Plot Details</p>
+              <p className="text-xs text-slate-500">
+                Villa #{plotData.villaNo}
+              </p>
             </div>
+          </div>
           <p className="text-2xl font-bold font-mono text-slate-100 mb-2">
             {formatArea(plotData.areaInSqFt)}
           </p>
@@ -101,44 +128,12 @@ export default function DashboardSummary({ currentUser, perSqFtRate }: Dashboard
       </div>
 
       {/* Community Announcements */}
-      <div className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-6">
-        <div className="flex items-center gap-2 mb-4">
-          <Bell className="w-5 h-5 text-violet-400" />
-          <h2 className="text-xl font-bold text-slate-100">Community Announcements</h2>
-        </div>
-        <div className="space-y-4">
-          {MOCK_ANNOUNCEMENTS.map((announcement) => (
-            <div
-              key={announcement.id}
-              className="border-l-2 border-violet-500/50 pl-4 py-2"
-            >
-              <div className="flex items-start justify-between mb-1">
-                <h3 className="text-sm font-semibold text-slate-200">
-                  {announcement.title}
-                </h3>
-                <span
-                  className={`text-xs px-2 py-1 rounded ${
-                    announcement.priority === 'high'
-                      ? 'bg-red-500/20 text-red-400'
-                      : announcement.priority === 'medium'
-                      ? 'bg-yellow-500/20 text-yellow-400'
-                      : 'bg-green-500/20 text-green-400'
-                  }`}
-                >
-                  {announcement.priority}
-                </span>
-              </div>
-              <p className="text-sm text-slate-400 mb-2">{announcement.message}</p>
-              <p className="text-xs text-slate-500">
-                Posted on {new Date(announcement.date).toLocaleDateString('en-IN', {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </p>
-            </div>
-          ))}
-        </div>
+      <div className="">
+        {isLoading && <PageLoader message="Geting new announcements.." />}
+        {error && <Alert message="No announcements found!!!" type="error" />}
+        {!isLoading && !error && announcements && (
+          <AnnouncementsWrapper announcements={announcements} refresh={() => refetchAnnouncements()} />
+        )}
       </div>
     </div>
   );
