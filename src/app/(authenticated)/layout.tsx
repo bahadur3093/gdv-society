@@ -1,8 +1,8 @@
-// app/(authenticated)/layout.tsx — SERVER COMPONENT
-
-import { redirect } from 'next/navigation';
-import { auth } from '@/lib/auth';
-import UserProvider, { type AppUser } from '@/components/providers/UserProvider';
+import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import UserProvider, {
+  type AppUser,
+} from "@/components/providers/UserProvider";
 
 export default async function AuthenticatedLayout({
   children,
@@ -10,13 +10,16 @@ export default async function AuthenticatedLayout({
   children: React.ReactNode;
 }) {
   const session = await auth();
-  
+
   // 🔑 If somehow middleware missed this, redirect now
   if (!session?.user) {
-    redirect('/auth/signin');
+    redirect("/auth/signin");
   }
-  
-  // 🔑 Normalize session → AppUser once, here
+
+  if (session.user.role !== "ADMIN" && !session.user.emailVerified) {
+    redirect("/auth/verification-pending");
+  }
+
   const user: AppUser = {
     id: session.user.id,
     name: session.user.name,

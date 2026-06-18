@@ -1,4 +1,4 @@
-import NextAuth from "next-auth";
+import NextAuth, { User } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
@@ -11,10 +11,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        email: {},
-        password: {},
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          console.log("❌ EARLY EXIT: missing email or password");
+          return null;
+        }
+
         if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
@@ -24,7 +29,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         const valid = await bcrypt.compare(
           credentials.password as string,
-          user.password
+          user.password,
         );
         if (!valid) return null;
 
@@ -34,7 +39,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           name: user.name,
           role: user.role,
           plotNumber: user.plotNumber,
-        } as any;
+          emailVerified: user.emailVerified,
+        } as User;
       },
     }),
   ],
@@ -44,6 +50,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.id = user.id;
         token.role = user.role;
         token.plotNumber = user.plotNumber;
+        token.emailVerified = user.emailVerified;
+        token.name = user.name;
       }
       return token;
     },
@@ -52,6 +60,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.plotNumber = token.plotNumber;
+        session.user.emailVerified = token.emailVerified || null;
+        session.user.name = token.name;
       }
       return session;
     },

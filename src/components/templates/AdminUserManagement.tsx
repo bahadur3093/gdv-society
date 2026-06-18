@@ -1,110 +1,130 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { 
-  Users, 
-  UserPlus, 
-  Edit, 
-  Trash2, 
-  Save, 
-  X, 
-  RefreshCw, 
+import { useState } from "react";
+import useSWR from "swr";
+import {
+  Users,
+  UserPlus,
+  Edit,
+  Trash2,
+  Save,
+  X,
+  RefreshCw,
   AlertCircle,
   CheckCircle2,
   Search,
   ChevronLeft,
-  ChevronRight
-} from 'lucide-react';
-import ConfirmDialog from '@/components/molecules/ConfirmDialog';
-import { PageLoader } from '../atoms';
+  ChevronRight,
+} from "lucide-react";
+import ConfirmDialog from "@/components/molecules/ConfirmDialog";
+import { PageLoader } from "../atoms";
 
 interface User {
   id: string;
   email: string;
   name: string;
-  role: 'RESIDENT' | 'ADMIN';
+  role: "RESIDENT" | "ADMIN";
   plotNumber?: string;
   emailVerified: string | null;
   createdAt: string;
   updatedAt: string;
 }
 
+interface UsersApiResponse {
+  data: User[];
+  pagination: {
+    page: number;
+    totalPages: number;
+    total: number;
+  };
+}
+
 interface AdminUserManagementProps {
   onUserUpdate?: () => void;
 }
 
-export default function AdminUserManagement({ onUserUpdate }: AdminUserManagementProps) {
-  const [users, setUsers] = useState<User[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
+const fetcher = async <T,>(url: string): Promise<T> => {
+  const res = await fetch(url);
+  if (!res.ok) {
+    const data = await res.json().catch(() => ({}));
+    throw new Error(data.error || `Request failed: ${res.status}`);
+  }
+  return res.json();
+};
+
+export default function AdminUserManagement({
+  onUserUpdate,
+}: AdminUserManagementProps) {
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<Partial<User>>({});
   const [showAddForm, setShowAddForm] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
   const [newUserData, setNewUserData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    plotNumber: '',
-    role: 'RESIDENT' as 'RESIDENT' | 'ADMIN'
+    name: "",
+    email: "",
+    password: "",
+    plotNumber: "",
+    role: "RESIDENT" as "RESIDENT" | "ADMIN",
   });
-  
-  // Confirm Dialog State
+
   const [confirmDialog, setConfirmDialog] = useState<{
     isOpen: boolean;
     title: string;
     message: string;
     onConfirm: () => void;
-    variant: 'danger' | 'warning' | 'info' | 'success';
+    variant: "danger" | "warning" | "info" | "success";
     confirmText?: string;
   }>({
     isOpen: false,
-    title: '',
-    message: '',
+    title: "",
+    message: "",
     onConfirm: () => {},
-    variant: 'info',
+    variant: "info",
   });
   const [dialogLoading, setDialogLoading] = useState(false);
 
-  // Fetch users from API
-  const fetchUsers = async (page = 1) => {
-    try {
-      setLoading(true);
-      setError('');
-      const response = await fetch(`/api/users?page=${page}&limit=10`);
-      const data = await response.json();
+  const [deleteConfirmation, setDeleteConfirmation] = useState<{
+    userId: string;
+    userName: string;
+    typedName: string;
+  } | null>(null);
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to fetch users');
-      }
+  const {
+    data,
+    error: swrError,
+    isLoading,
+    mutate: refetchUsers,
+  } = useSWR<UsersApiResponse>(
+    `/api/users?page=${currentPage}&limit=10`,
+    fetcher,
+    {
+      revalidateOnFocus: false,
+      keepPreviousData: true,
+    },
+  );
 
-      setUsers(data.data || []);
-      setCurrentPage(data.pagination?.page || 1);
-      setTotalPages(data.pagination?.totalPages || 1);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load users');
-    } finally {
-      setLoading(false);
-    }
-  };
+  const users: User[] = data?.data || [];
+  const totalPages = data?.pagination?.totalPages || 1;
 
-  useEffect(() => {
-    fetchUsers(currentPage);
-  }, [currentPage]);
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (user.plotNumber && user.plotNumber.includes(searchQuery)),
+  );
 
-  // Handle add new user
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
-      const response = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: newUserData.name,
           email: newUserData.email,
@@ -113,23 +133,28 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
         }),
       });
 
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to create user');
+        throw new Error(responseData.error || "Failed to create user");
       }
 
-      setSuccess('User created successfully');
+      setSuccess("User created successfully");
       setShowAddForm(false);
-      setNewUserData({ name: '', email: '', password: '', plotNumber: '', role: 'RESIDENT' });
-      fetchUsers(currentPage);
+      setNewUserData({
+        name: "",
+        email: "",
+        password: "",
+        plotNumber: "",
+        role: "RESIDENT",
+      });
+      await refetchUsers();
       onUserUpdate?.();
-    } catch (err: any) {
-      setError(err.message || 'Failed to create user');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to create user");
     }
   };
 
-  // Handle edit user
   const handleEditClick = (user: User) => {
     setEditingUserId(user.id);
     setEditFormData({
@@ -137,34 +162,34 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
       email: user.email,
       plotNumber: user.plotNumber,
       role: user.role,
-      emailVerified: user.emailVerified
+      emailVerified: user.emailVerified,
     });
   };
 
   const handleEditSave = async (userId: string) => {
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const response = await fetch(`/api/users/${userId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(editFormData),
       });
 
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to update user');
+        throw new Error(responseData.error || "Failed to update user");
       }
 
-      setSuccess('User updated successfully');
+      setSuccess("User updated successfully");
       setEditingUserId(null);
       setEditFormData({});
-      fetchUsers(currentPage);
+      await refetchUsers();
       onUserUpdate?.();
-    } catch (err: any) {
-      setError(err.message || 'Failed to update user');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to update user");
     }
   };
 
@@ -173,82 +198,73 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
     setEditFormData({});
   };
 
-  // Delete confirmation state
-  const [deleteConfirmation, setDeleteConfirmation] = useState<{
-    userId: string;
-    userName: string;
-    typedName: string;
-  } | null>(null);
-
-  // Handle delete user
   const handleDeleteUser = (userId: string, userName: string) => {
-    setDeleteConfirmation({
-      userId,
-      userName,
-      typedName: ''
-    });
+    setDeleteConfirmation({ userId, userName, typedName: "" });
   };
 
-  // Execute delete after name confirmation
   const executeDeleteUser = async () => {
     if (!deleteConfirmation) return;
 
     setDialogLoading(true);
-    setError('');
-    setSuccess('');
+    setError("");
+    setSuccess("");
 
     try {
       const response = await fetch(`/api/users/${deleteConfirmation.userId}`, {
-        method: 'DELETE',
+        method: "DELETE",
       });
 
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete user');
+        throw new Error(responseData.error || "Failed to delete user");
       }
 
-      setSuccess('User deleted successfully');
-      fetchUsers(currentPage);
+      setSuccess("User deleted successfully");
+      await refetchUsers();
       onUserUpdate?.();
       setDeleteConfirmation(null);
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete user');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to delete user");
     } finally {
       setDialogLoading(false);
     }
   };
 
-  // Handle password reset
   const handlePasswordReset = (userId: string, userEmail: string) => {
     setConfirmDialog({
       isOpen: true,
-      title: 'Reset Password',
+      title: "Reset Password",
       message: `Reset password for "${userEmail}"? The user's current password will be cleared and they will be required to create a new password on their next login attempt.`,
-      variant: 'warning',
-      confirmText: 'Reset Password',
+      variant: "warning",
+      confirmText: "Reset Password",
       onConfirm: async () => {
         setDialogLoading(true);
-        setError('');
-        setSuccess('');
+        setError("");
+        setSuccess("");
 
         try {
-          const response = await fetch('/api/admin/reset-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+          const response = await fetch("/api/admin/reset-password", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ userId }),
           });
 
-          const data = await response.json();
+          const responseData = await response.json();
 
           if (!response.ok) {
-            throw new Error(data.error || 'Failed to reset password');
+            throw new Error(responseData.error || "Failed to reset password");
           }
 
-          setSuccess('Password reset successfully. User will be prompted to create a new password on next login.');
-          setConfirmDialog({ ...confirmDialog, isOpen: false });
-        } catch (err: any) {
-          setError(err.message || 'Failed to reset password');
+          setSuccess(
+            "Password reset successfully. User will be prompted to create a new password on next login.",
+          );
+          setConfirmDialog((prev) => ({ ...prev, isOpen: false }));
+          await refetchUsers();
+        } catch (err: unknown) {
+          setError(
+            err instanceof Error ? err.message : "Failed to reset password",
+          );
         } finally {
           setDialogLoading(false);
         }
@@ -256,14 +272,7 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
     });
   };
 
-  // Filter users based on search query
-  const filteredUsers = users.filter(user => 
-    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    (user.plotNumber && user.plotNumber.includes(searchQuery))
-  );
-
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <PageLoader message="Loading..." fullScreen />
@@ -271,9 +280,23 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
     );
   }
 
+  if (swrError) {
+    return (
+      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg text-red-400 flex items-center gap-2">
+        <AlertCircle className="w-5 h-5" />
+        <span>Failed to load users: {swrError.message}</span>
+        <button
+          onClick={() => refetchUsers()}
+          className="ml-auto px-3 py-1 bg-red-600 hover:bg-red-500 text-white rounded text-sm transition-colors"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-violet-500/10 rounded-lg">
@@ -281,7 +304,9 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
           </div>
           <div>
             <h2 className="text-2xl font-bold text-white">User Management</h2>
-            <p className="text-sm text-slate-400">Manage registered users and their accounts</p>
+            <p className="text-sm text-slate-400">
+              Manage registered users and their accounts
+            </p>
           </div>
         </div>
         <button
@@ -293,7 +318,6 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
         </button>
       </div>
 
-      {/* Error/Success Messages */}
       {error && (
         <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-center gap-2 text-red-400">
           <AlertCircle className="w-5 h-5" />
@@ -308,49 +332,69 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
         </div>
       )}
 
-      {/* Add User Form */}
       {showAddForm && (
         <div className="p-6 bg-slate-900/50 border border-slate-800/40 rounded-lg">
-          <h3 className="text-lg font-semibold text-white mb-4">Add New User</h3>
-          <form onSubmit={handleAddUser} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <h3 className="text-lg font-semibold text-white mb-4">
+            Add New User
+          </h3>
+          <form
+            onSubmit={handleAddUser}
+            className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          >
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Full Name</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Full Name
+              </label>
               <input
                 type="text"
                 value={newUserData.name}
-                onChange={(e) => setNewUserData({ ...newUserData, name: e.target.value })}
+                onChange={(e) =>
+                  setNewUserData({ ...newUserData, name: e.target.value })
+                }
                 required
                 className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 placeholder="John Doe"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Email Address</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Email Address
+              </label>
               <input
                 type="email"
                 value={newUserData.email}
-                onChange={(e) => setNewUserData({ ...newUserData, email: e.target.value })}
+                onChange={(e) =>
+                  setNewUserData({ ...newUserData, email: e.target.value })
+                }
                 required
                 className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 placeholder="user@example.com"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Plot Number (Optional)</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Plot Number (Optional)
+              </label>
               <input
                 type="text"
                 value={newUserData.plotNumber}
-                onChange={(e) => setNewUserData({ ...newUserData, plotNumber: e.target.value })}
+                onChange={(e) =>
+                  setNewUserData({ ...newUserData, plotNumber: e.target.value })
+                }
                 className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
                 placeholder="15"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">Initial Password</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">
+                Initial Password
+              </label>
               <input
                 type="password"
                 value={newUserData.password}
-                onChange={(e) => setNewUserData({ ...newUserData, password: e.target.value })}
+                onChange={(e) =>
+                  setNewUserData({ ...newUserData, password: e.target.value })
+                }
                 required
                 minLength={8}
                 className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500"
@@ -368,7 +412,13 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
                 type="button"
                 onClick={() => {
                   setShowAddForm(false);
-                  setNewUserData({ name: '', email: '', password: '', plotNumber: '', role: 'RESIDENT' });
+                  setNewUserData({
+                    name: "",
+                    email: "",
+                    password: "",
+                    plotNumber: "",
+                    role: "RESIDENT",
+                  });
                 }}
                 className="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition-colors"
               >
@@ -379,7 +429,6 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
         </div>
       )}
 
-      {/* Search Bar */}
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
         <input
@@ -391,87 +440,137 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
         />
       </div>
 
-      {/* Users Table */}
       <div className="bg-slate-900/50 border border-slate-800/40 rounded-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-slate-800/50 border-b border-slate-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Name</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Email</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Plot</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Role</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">Verified</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">Actions</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Name
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Email
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Plot
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Role
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Verified
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-slate-400 uppercase tracking-wider">
+                  Actions
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800">
               {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-slate-800/30 transition-colors">
+                <tr
+                  key={user.id}
+                  className="hover:bg-slate-800/30 transition-colors"
+                >
                   <td className="px-4 py-3">
                     {editingUserId === user.id ? (
                       <input
                         type="text"
-                        value={editFormData.name || ''}
-                        onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                        value={editFormData.name || ""}
+                        onChange={(e) =>
+                          setEditFormData({
+                            ...editFormData,
+                            name: e.target.value,
+                          })
+                        }
                         className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                       />
                     ) : (
-                      <span className="text-white font-medium">{user.name}</span>
+                      <span className="text-white font-medium">
+                        {user.name}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     {editingUserId === user.id ? (
                       <input
                         type="email"
-                        value={editFormData.email || ''}
-                        onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                        value={editFormData.email || ""}
+                        onChange={(e) =>
+                          setEditFormData({
+                            ...editFormData,
+                            email: e.target.value,
+                          })
+                        }
                         className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                       />
                     ) : (
-                      <span className="text-slate-300 text-sm">{user.email}</span>
+                      <span className="text-slate-300 text-sm">
+                        {user.email}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3">
                     {editingUserId === user.id ? (
                       <input
                         type="text"
-                        value={editFormData.plotNumber || ''}
-                        onChange={(e) => setEditFormData({ ...editFormData, plotNumber: e.target.value })}
+                        value={editFormData.plotNumber || ""}
+                        onChange={(e) =>
+                          setEditFormData({
+                            ...editFormData,
+                            plotNumber: e.target.value,
+                          })
+                        }
                         className="w-full px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                         placeholder="Plot #"
                       />
                     ) : (
-                      <span className="text-slate-300 text-sm">{user.plotNumber || '—'}</span>
+                      <span className="text-slate-300 text-sm">
+                        {user.plotNumber || "—"}
+                      </span>
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      user.role === 'ADMIN' 
-                        ? 'bg-violet-500/10 text-violet-400 border border-violet-500/20' 
-                        : 'bg-slate-700 text-slate-300'
-                    }`}>
+                    <span
+                      className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
+                        user.role === "ADMIN"
+                          ? "bg-violet-500/10 text-violet-400 border border-violet-500/20"
+                          : "bg-slate-700 text-slate-300"
+                      }`}
+                    >
                       {user.role}
                     </span>
                   </td>
                   <td className="px-4 py-3">
                     {editingUserId === user.id ? (
                       <select
-                        value={editFormData.emailVerified ? 'verified' : 'not-verified'}
-                        onChange={(e) => setEditFormData({ 
-                          ...editFormData, 
-                          emailVerified: e.target.value === 'verified' ? new Date().toISOString() : null 
-                        })}
+                        value={
+                          editFormData.emailVerified
+                            ? "verified"
+                            : "not-verified"
+                        }
+                        onChange={(e) =>
+                          setEditFormData({
+                            ...editFormData,
+                            emailVerified:
+                              e.target.value === "verified"
+                                ? new Date().toISOString()
+                                : null,
+                          })
+                        }
                         className="px-2 py-1 bg-slate-700 border border-slate-600 rounded text-white text-sm"
                       >
                         <option value="verified">✓ Verified</option>
                         <option value="not-verified">Not verified</option>
                       </select>
                     ) : (
-                      <span className={`text-sm ${
-                        user.emailVerified ? 'text-green-400' : 'text-slate-500'
-                      }`}>
-                        {user.emailVerified ? '✓ Verified' : 'Not verified'}
+                      <span
+                        className={`text-sm ${
+                          user.emailVerified
+                            ? "text-green-400"
+                            : "text-slate-500"
+                        }`}
+                      >
+                        {user.emailVerified ? "✓ Verified" : "Not verified"}
                       </span>
                     )}
                   </td>
@@ -504,7 +603,9 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
                             <Edit className="w-4 h-4" />
                           </button>
                           <button
-                            onClick={() => handlePasswordReset(user.id, user.email)}
+                            onClick={() =>
+                              handlePasswordReset(user.id, user.email)
+                            }
                             className="p-1.5 bg-orange-600 hover:bg-orange-500 text-white rounded transition-colors"
                             title="Reset password"
                           >
@@ -534,7 +635,6 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
         )}
       </div>
 
-      {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-slate-400">
@@ -542,14 +642,16 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
           </div>
           <div className="flex gap-2">
             <button
-              onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
               disabled={currentPage === 1}
               className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
-              onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+              onClick={() =>
+                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+              }
               disabled={currentPage === totalPages}
               className="p-2 bg-slate-800 hover:bg-slate-700 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -559,10 +661,9 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
         </div>
       )}
 
-      {/* Confirm Dialog */}
       <ConfirmDialog
         isOpen={confirmDialog.isOpen}
-        onClose={() => setConfirmDialog({ ...confirmDialog, isOpen: false })}
+        onClose={() => setConfirmDialog((prev) => ({ ...prev, isOpen: false }))}
         onConfirm={confirmDialog.onConfirm}
         title={confirmDialog.title}
         message={confirmDialog.message}
@@ -571,7 +672,6 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
         loading={dialogLoading}
       />
 
-      {/* Delete User Confirmation Modal with Name Verification */}
       {deleteConfirmation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-slate-900 border border-red-500/30 rounded-lg max-w-md w-full shadow-2xl">
@@ -581,26 +681,41 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
                   <AlertCircle className="w-6 h-6 text-red-400" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-semibold text-white mb-2">Delete User Account</h3>
+                  <h3 className="text-lg font-semibold text-white mb-2">
+                    Delete User Account
+                  </h3>
                   <p className="text-sm text-slate-300 mb-4">
-                    You are about to permanently delete the account for <span className="font-semibold text-red-400">{deleteConfirmation.userName}</span>. 
-                    This action cannot be undone and will remove all associated data.
+                    You are about to permanently delete the account for{" "}
+                    <span className="font-semibold text-red-400">
+                      {deleteConfirmation.userName}
+                    </span>
+                    . This action cannot be undone and will remove all
+                    associated data.
                   </p>
                   <div className="mb-4">
                     <label className="block text-sm font-medium text-slate-300 mb-2">
-                      To confirm deletion, please type the user's name:
+                      To confirm deletion, please type the user&apos;s name:
                     </label>
                     <input
                       type="text"
                       value={deleteConfirmation.typedName}
-                      onChange={(e) => setDeleteConfirmation({ ...deleteConfirmation, typedName: e.target.value })}
+                      onChange={(e) =>
+                        setDeleteConfirmation({
+                          ...deleteConfirmation,
+                          typedName: e.target.value,
+                        })
+                      }
                       placeholder={deleteConfirmation.userName}
                       className="w-full px-4 py-2 bg-slate-800/50 border border-slate-700 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-red-500"
                       autoFocus
                     />
-                    {deleteConfirmation.typedName && deleteConfirmation.typedName !== deleteConfirmation.userName && (
-                      <p className="text-xs text-red-400 mt-1">Name does not match</p>
-                    )}
+                    {deleteConfirmation.typedName &&
+                      deleteConfirmation.typedName !==
+                        deleteConfirmation.userName && (
+                        <p className="text-xs text-red-400 mt-1">
+                          Name does not match
+                        </p>
+                      )}
                   </div>
                 </div>
               </div>
@@ -615,7 +730,10 @@ export default function AdminUserManagement({ onUserUpdate }: AdminUserManagemen
               </button>
               <button
                 onClick={executeDeleteUser}
-                disabled={deleteConfirmation.typedName !== deleteConfirmation.userName || dialogLoading}
+                disabled={
+                  deleteConfirmation.typedName !==
+                    deleteConfirmation.userName || dialogLoading
+                }
                 className="px-4 py-2 bg-red-600 hover:bg-red-500 text-white rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {dialogLoading ? (

@@ -35,6 +35,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user has a password set
+    debugger
     const hasPassword = user.password !== null && user.password !== '';
 
     const response: ApiResponse = {

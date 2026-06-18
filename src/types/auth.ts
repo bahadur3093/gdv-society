@@ -1,8 +1,23 @@
-// Authentication and Authorization Types
+// src/types/auth.ts
 
-export type UserRole = 'RESIDENT' | 'ADMIN';
+export type UserRole = "RESIDENT" | "ADMIN";
 
-export interface User {
+export type ResetStatus =
+  | "PENDING"
+  | "APPROVED"
+  | "COMPLETED"
+  | "EXPIRED"
+  | "DENIED";
+
+// ─────────────────────────────────────────────────────────
+// Domain types — your DB representations
+// ─────────────────────────────────────────────────────────
+
+/**
+ * App-level user representation (for API responses, UI display, etc.)
+ * NOT the NextAuth Session user — for that, use `Session["user"]` from next-auth.
+ */
+export interface AppUser {
   id: string;
   email: string;
   name: string;
@@ -13,16 +28,8 @@ export interface User {
   updatedAt: string;
 }
 
-export interface UserWithPassword extends User {
+export interface AppUserWithPassword extends AppUser {
   password: string;
-}
-
-export interface Session {
-  id: string;
-  sessionToken: string;
-  userId: string;
-  expires: string;
-  user?: User;
 }
 
 export interface PasswordResetRequest {
@@ -34,13 +41,14 @@ export interface PasswordResetRequest {
   approvedBy?: string | null;
   expiresAt: string;
   token?: string | null;
-  user?: Pick<User, 'id' | 'email' | 'name'>;
-  approver?: Pick<User, 'id' | 'email' | 'name'>;
+  user?: Pick<AppUser, "id" | "email" | "name">;
+  approver?: Pick<AppUser, "id" | "email" | "name">;
 }
 
-export type ResetStatus = 'PENDING' | 'APPROVED' | 'COMPLETED' | 'EXPIRED' | 'DENIED';
+// ─────────────────────────────────────────────────────────
+// Request/Response DTOs for your auth API routes
+// ─────────────────────────────────────────────────────────
 
-// Authentication request/response types
 export interface SignUpRequest {
   email: string;
   password: string;
@@ -70,19 +78,4 @@ export interface ApproveResetRequest {
 export interface DenyResetRequest {
   requestId: string;
   adminId: string;
-}
-
-// NextAuth types
-export interface AuthUser {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-  plotNumber?: string;
-  emailVerified?: Date | null;
-}
-
-export interface AuthSession {
-  user: AuthUser;
-  expires: string;
 }

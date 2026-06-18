@@ -8,8 +8,8 @@ export const authConfig = {
   providers: [
     Credentials({
       credentials: {
-        email: {},
-        password: {},
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" },
       },
       authorize: async () => null,
     }),
@@ -17,17 +17,24 @@ export const authConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user;
-      const isOnAdmin = nextUrl.pathname.startsWith("/admin");
-      const isOnResident = nextUrl.pathname.startsWith("/resident");
+      const role = auth?.user?.role;
+      const path = nextUrl.pathname;
 
-      if (isOnAdmin || isOnResident) return isLoggedIn;
-      return true;
+      if (path.startsWith("/auth/")) return true;
+      if (path === "/maintenance-calculator") return true;
+
+      if (path.startsWith("/admin")) return isLoggedIn && role === "ADMIN";
+      if (path.startsWith("/resident")) return isLoggedIn;
+
+      return isLoggedIn; // everything else needs login
     },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.plotNumber = user.plotNumber;
+        token.emailVerified = user.emailVerified;
+        token.name = user.name;
       }
       return token;
     },
@@ -36,6 +43,8 @@ export const authConfig = {
         session.user.id = token.id;
         session.user.role = token.role;
         session.user.plotNumber = token.plotNumber;
+        session.user.emailVerified = token.emailVerified || null;
+        session.user.name = token.name;
       }
       return session;
     },

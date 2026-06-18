@@ -1,21 +1,16 @@
-'use client';
 
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import AuthenticationPortal from '@/components/organisms/AuthenticationPortal';
+import { auth } from "@/lib/auth/auth";
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
-  const router = useRouter();
+export default async function HomePage() {
+  const session = await auth();
 
-  // Redirect to signin page
-  useEffect(() => {
-    router.push('/auth/signin');
-  }, [router]);
+  if (!session?.user) redirect("/auth/signin");
 
-  // Render authentication portal as fallback
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <AuthenticationPortal />
-    </main>
-  );
+  if (session.user.role !== "ADMIN" && !session.user.emailVerified) {
+    redirect("/auth/verification-pending");
+  }
+
+  if (session.user.role === "ADMIN") redirect("/admin");
+  redirect("/resident");
 }

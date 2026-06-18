@@ -1,18 +1,21 @@
-'use client';
+"use client";
 
-import { SessionProvider } from 'next-auth/react';
-import type { ReactNode } from 'react';
-import StoreProvider from '@/store/StoreProvider';
+import { SessionProvider } from "next-auth/react";
+import type { ReactNode } from "react";
+import StoreProvider from "@/store/StoreProvider";
+import { Session } from "next-auth";
 
 interface ProvidersProps {
   children: ReactNode;
+  session: Session | null;
 }
 
-export function Providers({ children }: ProvidersProps) {
+export function Providers({ children, session }: ProvidersProps) {
   return (
     <StoreProvider>
-      <SessionProvider 
-        refetchInterval={0} 
+      <SessionProvider
+        session={session}
+        refetchInterval={0}
         refetchOnWindowFocus={false}
       >
         {children}

@@ -42,6 +42,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user already has a password
+    debugger
     if (user.password && user.password !== '') {
       const response: ApiResponse = {
         success: false,
