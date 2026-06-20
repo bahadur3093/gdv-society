@@ -138,6 +138,8 @@ docs/build/
 
 # Markdown files (except README.md)
 *.md
+!DESIGN_SYSTEM.md
+!AI_INSTRUCTIONS.md
 !README.md
 
 # AI/ML models (if any)

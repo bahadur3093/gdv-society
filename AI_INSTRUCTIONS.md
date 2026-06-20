@@ -3,7 +3,7 @@
 This document serves as the system prompt and technical guide for AI agents interacting with this repository. It defines the architecture, standards, and constraints to ensure code consistency and maintainability.
 
 ## 🛠 Tech Stack
-- **Framework:** Next.js 15+ (App Router)
+- **Framework:** Next.js 16+ (App Router)
 - **Language:** TypeScript (Strict Mode)
 - **Styling:** Tailwind CSS v4 (CSS-first configuration)
 - **Theme:** "Tactical Earth" (Deep Dark / Enterprise-Rugged)
