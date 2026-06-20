@@ -3,6 +3,9 @@ import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { UserRole } from "@/types";
+import { cache } from "react";
+import { redirect } from "next/navigation";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -57,11 +60,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.plotNumber = token.plotNumber;
-        session.user.emailVerified = token.emailVerified || null;
-        session.user.name = token.name;
+        session.user.id = token.id as string;
+        session.user.role = token.role as UserRole;
+        session.user.plotNumber = token.plotNumber as string | null;
+        session.user.emailVerified = (token.emailVerified as Date) || null;
+        session.user.name = token.name || "";
       }
       return session;
     },
@@ -76,3 +79,38 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
 });
+
+export const getCurrentUser = cache(async () => {
+  const session = await auth();
+  return session?.user ?? null;
+});
+
+export async function requireUser() {
+  const user = await getCurrentUser();
+  if (!user) redirect("/auth/signin");
+  return user;
+}
+
+export async function requireResident() {
+  const user = await requireUser();
+
+  if (user.role !== "RESIDENT") {
+    redirect("/admin");
+  }
+
+  if (!user.emailVerified) {
+    redirect("/auth/verification-pending");
+  }
+
+  return user;
+}
+
+export async function requireAdmin() {
+  const user = await requireUser();
+
+  if (user.role !== "ADMIN") {
+    redirect("/resident");
+  }
+
+  return user;
+}

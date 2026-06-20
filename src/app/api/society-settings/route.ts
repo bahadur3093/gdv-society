@@ -23,9 +23,9 @@ export async function GET() {
     if (!settings) {
       settings = await prisma.societySettings.create({
         data: {
-          perSqFtRate: 2.15, // Default rate
-          sinkingFundPercentage: 20, // Default 20%
-          totalVillas: 47, // Default total villas
+          perSqFtRate: 2.15,
+          sinkingFundPercentage: 20,
+          totalVillas: 47,
         },
       });
     }

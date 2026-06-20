@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -9,37 +6,36 @@ datasource db {
   provider = "postgresql"
 }
 
-// User model for authentication and authorization
 model User {
-  id            String    @id @default(cuid())
-  email         String    @unique
-  password      String?   // Nullable to support password reset flow
-  name          String
-  role          UserRole  @default(RESIDENT)
-  emailVerified DateTime?
-  plotNumber    String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-
-  // Relations
-  sessions              Session[]
-  passwordResetRequests PasswordResetRequest[]
-  approvedResetRequests PasswordResetRequest[] @relation("ApprovedBy")
-  residentRequests      ResidentRequest[]
-  requestComments       RequestComment[]       @relation("CommentAuthor")
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  password              String?
+  name                  String
+  role                  UserRole               @default(RESIDENT)
+  emailVerified         DateTime?
+  plotNumber            String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
   familyMembers         FamilyMember[]
   ledgerEntries         LedgerEntry[]
+  approvedResetRequests PasswordResetRequest[] @relation("ApprovedBy")
+  passwordResetRequests PasswordResetRequest[]
+  requestComments       RequestComment[]       @relation("CommentAuthor")
+  residentRequests      ResidentRequest[]
+  sessions              Session[]
+
+  villa                Villa?
+  maintenanceBills     MaintenanceBill[]
+  payments             Payment[]              @relation("PaymentResident")
+  paymentsRecorded     Payment[]              @relation("PaymentRecorder")
+  specialLevies        SpecialLevy[]
+  adjustments          Adjustment[]           @relation("AdjustmentResident")
+  adjustmentsCreated   Adjustment[]           @relation("AdjustmentCreator")
 
   @@index([email])
   @@index([plotNumber])
 }
 
-enum UserRole {
-  RESIDENT
-  ADMIN
-}
-
-// Session model for NextAuth
 model Session {
   id           String   @id @default(cuid())
   sessionToken String   @unique
@@ -47,14 +43,12 @@ model Session {
   expires      DateTime
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([sessionToken])
 }
 
-// Password reset request model
 model PasswordResetRequest {
   id          String      @id @default(cuid())
   userId      String
@@ -66,13 +60,179 @@ model PasswordResetRequest {
   token       String?     @unique
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
-
-  user     User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  approver User? @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  approver    User?       @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([status])
   @@index([token])
+}
+
+model ResidentRequest {
+  id                   String           @id @default(cuid())
+  userId               String
+  plotNumber           String
+  requestType          RequestType
+  status               RequestStatus    @default(PENDING)
+  description          String
+  adminNotes           String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  newPlotSize          Int?
+  familyMemberName     String?
+  familyMemberRelation String?
+  familyMemberContact  String?
+  resolvedAt           DateTime?
+  resolvedBy           String?
+  lastResidentReplyAt  DateTime?
+  reopenedAt           DateTime?
+  reopenCount          Int              @default(0)
+  comments             RequestComment[]
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([requestType])
+  @@index([lastResidentReplyAt])
+}
+
+model RequestComment {
+  id             String          @id @default(cuid())
+  requestId      String
+  authorId       String
+  content        String
+  isAdminComment Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  author         User            @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  request        ResidentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model FamilyMember {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  relationship String
+  contact      String
+  addedAt      DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model LedgerEntry {
+  id          String          @id @default(cuid())
+  userId      String?
+  date        DateTime
+  description String
+  amount      Float
+  type        TransactionType
+  category    LedgerCategory
+  balance     Float
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User?           @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([date])
+  @@index([category])
+}
+
+model SocietySettings {
+  id                    String   @id @default(cuid())
+  perSqFtRate           Float
+  sinkingFundPercentage Float
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  totalVillas           Int      @default(47)
+}
+
+model Villa {
+  id         String   @id @default(cuid())
+  villaNo    Int      @unique
+  type       String
+  areaInSqM  Float
+  ownerName  String
+  areaInSqFt Float
+  remarks    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  isBillable      Boolean  @default(true)
+
+  userId          String?  @unique
+  user            User?    @relation(fields: [userId], references: [id])
+  maintenanceBills MaintenanceBill[]
+  payments         Payment[]
+
+  @@index([villaNo])
+  @@index([ownerName])
+  @@index([userId])
+}
+
+model AppConfig {
+  id          Int      @id @default(autoincrement())
+  configKey   String   @unique @map("config_key")
+  configValue Json     @map("config_value")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([configKey])
+  @@map("app_config")
+}
+
+model MonthlyExpense {
+  id          String   @id @default(cuid())
+  month       Int
+  year        Int
+  category    String
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([month, year, category])
+  @@index([month, year])
+  @@index([category])
+}
+
+model Announcement {
+  id          String             @id @default(cuid())
+  title       String
+  content     String
+  category    String
+  priority    String
+  isActive    Boolean            @default(true)
+  publishDate DateTime           @default(now())
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  files       AnnouncementFile[]
+
+  @@index([publishDate])
+  @@index([category])
+  @@index([priority])
+  @@index([isActive])
+}
+
+model AnnouncementFile {
+  id             String       @id @default(cuid())
+  announcementId String
+  url            String
+  name           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+}
+
+enum UserRole {
+  RESIDENT
+  ADMIN
 }
 
 enum ResetStatus {
@@ -81,56 +241,6 @@ enum ResetStatus {
   COMPLETED
   EXPIRED
   DENIED
-}
-
-// Resident request model with auto-resolution support
-model ResidentRequest {
-  id          String        @id @default(cuid())
-  userId      String
-  plotNumber  String
-  requestType RequestType
-  status      RequestStatus @default(PENDING)
-  description String
-  adminNotes  String?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
-  resolvedAt  DateTime?     // When the request was resolved
-  resolvedBy  String?       // User ID who resolved it (admin or resident)
-  lastResidentReplyAt DateTime? // Track last resident reply for auto-resolution
-  reopenedAt  DateTime?     // Track if request was reopened
-  reopenCount Int          @default(0) // Track number of times reopened
-
-  // Type-specific fields
-  newPlotSize          Int?
-  familyMemberName     String?
-  familyMemberRelation String?
-  familyMemberContact  String?
-
-  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  comments RequestComment[]
-
-  @@index([userId])
-  @@index([status])
-  @@index([requestType])
-  @@index([lastResidentReplyAt])
-}
-
-// Request comment model for admin-resident communication
-model RequestComment {
-  id        String   @id @default(cuid())
-  requestId String
-  authorId  String
-  content   String
-  isAdminComment Boolean @default(false) // Track if comment is from admin
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  request ResidentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
-  author  User            @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
-
-  @@index([requestId])
-  @@index([authorId])
-  @@index([createdAt])
 }
 
 enum RequestType {
@@ -150,42 +260,6 @@ enum RequestStatus {
   REOPENED
 }
 
-// Family member model
-model FamilyMember {
-  id           String   @id @default(cuid())
-  userId       String
-  name         String
-  relationship String
-  contact      String
-  addedAt      DateTime @default(now())
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-}
-
-// Ledger entry model for financial tracking
-model LedgerEntry {
-  id          String         @id @default(cuid())
-  userId      String?
-  date        DateTime
-  description String
-  amount      Float
-  type        TransactionType
-  category    LedgerCategory
-  balance     Float
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
-
-  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
-
-  @@index([userId])
-  @@index([date])
-  @@index([category])
-}
-
 enum TransactionType {
   DEBIT
   CREDIT
@@ -196,91 +270,127 @@ enum LedgerCategory {
   SINKING_FUND
 }
 
-// Society settings model
-model SocietySettings {
-  id                    String   @id @default(cuid())
-  perSqFtRate           Float
-  sinkingFundPercentage Float
-  totalVillas           Int      @default(47)
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-}
 
-// Villa model for plot/villa data management
-model Villa {
-  id              String   @id @default(cuid())
-  villaNo         Int      @unique
-  type            String
-  areaInSqM       Float
-  ownerName       String
-  areaInSqFt      Float
-  remarks         String?  // Optional field for additional notes
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  @@index([villaNo])
-  @@index([ownerName])
-}
-
-// App Configuration model for storing application settings
-model AppConfig {
-  id           Int      @id @default(autoincrement())
-  configKey    String   @unique @map("config_key")
-  configValue  Json     @map("config_value")
-  updatedAt    DateTime @default(now()) @updatedAt @map("updated_at")
-
-  @@map("app_config")
-  @@index([configKey])
-}
-
-// Monthly Expense model for tracking community expenses
-model MonthlyExpense {
-  id          String   @id @default(cuid())
-  month       Int      // 1-12
+// Monthly maintenance bill — one per villa per month
+model MaintenanceBill {
+  id          String     @id @default(cuid())
+  userId      String?
+  villaId     String
+  month       Int        // 1-12
   year        Int
-  category    String   // e.g., "Security", "Electricity", "Cleaning"
+
+  // Snapshots — preserve historical accuracy if rates change
+  areaInSqFt  Float
+  ratePerSqFt Float
   amount      Float
-  description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
 
-  @@unique([month, year, category])
+  dueDate     DateTime
+  status      BillStatus @default(PENDING)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  villa       Villa      @relation(fields: [villaId], references: [id], onDelete: Cascade)
+  user        User?      @relation(fields: [userId], references: [id])
+  allocations PaymentAllocation[]
+
+  @@unique([villaId, month, year])
+  @@index([villaId, status])
   @@index([month, year])
-  @@index([category])
+  @@index([villaId])
 }
 
-// Announcement model for storing community announcements
-model Announcement {
-  id          String   @id @default(cuid())
-  title       String
-  content     String
-  category    String   // e.g., "General", "Maintenance", "Event"
-  priority    String   // "low", "medium", "high", "critical"
-  isActive    Boolean  @default(true)
-  publishDate DateTime @default(now())
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Relations
-  files AnnouncementFile[]
-
-  @@index([publishDate])
-  @@index([category])
-  @@index([priority])
-  @@index([isActive])
+enum BillStatus {
+  PENDING
+  PARTIAL
+  PAID
 }
 
-// File attachment for community announcements
-model AnnouncementFile {
-  id             String       @id @default(cuid())
-  announcementId String
-  url            String
-  name           String
-  createdAt      DateTime     @default(now())
-  updatedAt      DateTime     @updatedAt
+// Payment received from a resident
+model Payment {
+  id          String        @id @default(cuid())
+  villaId     String?
+  userId      String?        // resident who paid
+  amount      Float
+  method      PaymentMethod
+  reference   String?       // UPI ref, cheque no, etc.
+  notes       String?
+  paidAt      DateTime      @default(now())
+  recordedBy  String        // admin user id who recorded it
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
-  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  villa       Villa?        @relation(fields: [villaId], references: [id])
+  user        User?         @relation("PaymentResident", fields: [userId], references: [id])
+  recorder    User          @relation("PaymentRecorder", fields: [recordedBy], references: [id])
+  allocations PaymentAllocation[]
 
-  @@index([announcementId])
+  @@index([userId, paidAt])
 }
 
+enum PaymentMethod {
+  UPI
+  CASH
+  BANK_TRANSFER
+  CHEQUE
+  OTHER
+}
+
+// Links payments to bills/levies — one payment can cover multiple items
+model PaymentAllocation {
+  id        String   @id @default(cuid())
+  paymentId String
+  billId    String?
+  levyId    String?
+  amount    Float
+  createdAt DateTime @default(now())
+
+  payment Payment          @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+  bill    MaintenanceBill? @relation(fields: [billId], references: [id], onDelete: Cascade)
+  levy    SpecialLevy?     @relation(fields: [levyId], references: [id], onDelete: Cascade)
+
+  @@index([paymentId])
+  @@index([billId])
+  @@index([levyId])
+}
+
+// One-time special charges (e.g., emergency repair split across residents)
+model SpecialLevy {
+  id          String     @id @default(cuid())
+  userId      String
+  title       String     // "Emergency plumbing repair"
+  reason      String?
+  amount      Float
+  status      BillStatus @default(PENDING)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  user        User       @relation(fields: [userId], references: [id])
+  allocations PaymentAllocation[]
+
+  @@index([userId, status])
+}
+
+// Manual corrections, late fees, waivers, write-offs
+model Adjustment {
+  id          String         @id @default(cuid())
+  userId      String
+  amount      Float          // positive = increases what they owe
+  type        AdjustmentType
+  reason      String
+  createdById String
+  createdAt   DateTime       @default(now())
+
+  user      User @relation("AdjustmentResident", fields: [userId], references: [id])
+  createdBy User @relation("AdjustmentCreator", fields: [createdById], references: [id])
+
+  @@index([userId])
+}
+
+enum AdjustmentType {
+  LATE_FEE
+  WAIVER
+  CORRECTION
+  WRITE_OFF
+  DISCOUNT
+  CREDIT_NOTE
+}

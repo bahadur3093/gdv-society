@@ -26,27 +26,27 @@ export async function requireAuth() {
  * Require admin role for API routes
  * Returns the authenticated admin session or throws an error response
  */
-export async function requireAdmin() {
-  const authResult = await requireAuth();
+// export async function requireAdmin() {
+//   const authResult = await requireAuth();
 
-  if (authResult instanceof NextResponse) {
-    return authResult;
-  }
+//   if (authResult instanceof NextResponse) {
+//     return authResult;
+//   }
 
-  const { session, user } = authResult;
+//   const { session, user } = authResult;
 
-  if (user.role !== 'ADMIN') {
-    return NextResponse.json(
-      {
-        success: false,
-        error: 'Forbidden - Admin access required',
-      },
-      { status: HttpStatus.FORBIDDEN }
-    );
-  }
+//   if (user.role !== 'ADMIN') {
+//     return NextResponse.json(
+//       {
+//         success: false,
+//         error: 'Forbidden - Admin access required',
+//       },
+//       { status: HttpStatus.FORBIDDEN }
+//     );
+//   }
 
-  return { session, user };
-}
+//   return { session, user };
+// }
 
 /**
  * Require ownership or admin role for API routes

@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/lib/auth/auth-helpers';
 import type { ApiResponse } from '@/types';
 import { HttpStatus } from '@/types';
+import { requireAdmin } from '@/lib/auth/auth';
 
 export async function POST(request: NextRequest) {
   try {

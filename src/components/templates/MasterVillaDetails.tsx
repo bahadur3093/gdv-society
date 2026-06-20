@@ -3,15 +3,10 @@
 import { useState, useMemo, useEffect } from 'react';
 import { formatCurrency, formatArea } from '@/utils';
 import { Table, Edit2, Save, X, ArrowUpDown, Loader2 } from 'lucide-react';
-import type { ApiResponse } from '@/types';
 import ConfirmDialog from '@/components/molecules/ConfirmDialog';
 import Toast from '@/components/atoms/Toast';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchVillas, updateVilla, selectAllVillas, selectVillasLoading, selectVillasError } from '@/store/slices/villasSlice';
-
-interface MasterVillaLedgerProps {
-  perSqFtRate: number;
-}
 
 interface EditingCell {
   villaNo: number;
@@ -31,7 +26,7 @@ interface VillaData {
   totalAmount: number;
 }
 
-export default function MasterVillaLedger({ perSqFtRate }: MasterVillaLedgerProps) {
+export default function MasterVillaDetails() {
   // Redux hooks
   const dispatch = useAppDispatch();
   const plotData = useAppSelector(selectAllVillas) as VillaData[];

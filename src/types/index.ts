@@ -1,6 +1,6 @@
 // Re-export authentication types
 import type { UserRole as AuthUserRole } from './auth';
-export type { User, Session, PasswordResetRequest, ResetStatus, AuthUser, AuthSession, SignUpRequest, SignInRequest, ForgotPasswordRequest, ResetPasswordRequest } from './auth';
+export type { PasswordResetRequest, ResetStatus, SignUpRequest, SignInRequest, ForgotPasswordRequest, ResetPasswordRequest } from './auth';
 export type UserRole = AuthUserRole;
 
 // Re-export API types

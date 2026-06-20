@@ -1,7 +1,8 @@
 import { auth } from "@/lib/auth/auth";
 import { redirect } from "next/navigation";
+import ResidentShell from "./ResidentShell";
 
-export default async function ResidentLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -10,9 +11,9 @@ export default async function ResidentLayout({
 
   if (!session?.user) redirect("/auth/signin");
 
-  if (session.user.role !== "RESIDENT" && session.user.role !== "ADMIN") {
-    redirect("/auth/signin");
+  if (session.user.role !== "RESIDENT") {
+    redirect("/admin");
   }
 
-  return <>{children}</>;
+  return <ResidentShell>{children}</ResidentShell>;
 }

@@ -1,5 +1,6 @@
 'use client';
 
+import { PlotData } from '@/types';
 import { createContext, useContext } from 'react';
 
 export interface AppUser {
@@ -9,6 +10,7 @@ export interface AppUser {
   role: 'ADMIN' | 'RESIDENT';
   plotNumber?: string | null;
   emailVerified: Date | string | null;
+  plotData?: PlotData | null;
 }
 
 const UserContext = createContext<AppUser | null>(null);
@@ -17,16 +19,12 @@ export default function UserProvider({
   user,
   children,
 }: {
-  user: AppUser;  // ← Non-null now
+  user: AppUser;
   children: React.ReactNode;
 }) {
   return <UserContext.Provider value={user}>{children}</UserContext.Provider>;
 }
 
-/**
- * Returns user. Guaranteed non-null inside (authenticated) tree.
- * Throws if used in public routes.
- */
 export function useUser(): AppUser {
   const user = useContext(UserContext);
   if (!user) {
@@ -38,9 +36,6 @@ export function useUser(): AppUser {
   return user;
 }
 
-/**
- * For components shared between public and authed pages.
- */
 export function useUserOptional(): AppUser | null {
   return useContext(UserContext);
 }
@@ -48,4 +43,9 @@ export function useUserOptional(): AppUser | null {
 export function useIsAdmin(): boolean {
   const user = useContext(UserContext);
   return user?.role === 'ADMIN';
+}
+
+export function usePlotData(): PlotData | null {
+  const user = useContext(UserContext);
+  return user?.plotData ?? null;
 }

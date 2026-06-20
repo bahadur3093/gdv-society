@@ -1,11 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/lib/auth/auth-helpers';
 import { updateVillaSchema } from '@/lib/validation/villa';
 import { validateRequest } from '@/lib/validation/common';
 import { calculateVillaExpenses } from '@/lib/utils/calculations';
 import type { ApiResponse, ApiError } from '@/types';
 import { HttpStatus } from '@/types';
+import { requireAdmin } from '@/lib/auth/auth';
 
 /**
  * GET /api/villas/[villaNo]

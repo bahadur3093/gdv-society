@@ -1,0 +1,256 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                    String                 @id @default(cuid())
+  email                 String                 @unique
+  password              String?
+  name                  String
+  role                  UserRole               @default(RESIDENT)
+  emailVerified         DateTime?
+  plotNumber            String?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
+  familyMembers         FamilyMember[]
+  ledgerEntries         LedgerEntry[]
+  approvedResetRequests PasswordResetRequest[] @relation("ApprovedBy")
+  passwordResetRequests PasswordResetRequest[]
+  requestComments       RequestComment[]       @relation("CommentAuthor")
+  residentRequests      ResidentRequest[]
+  sessions              Session[]
+
+  @@index([email])
+  @@index([plotNumber])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([sessionToken])
+}
+
+model PasswordResetRequest {
+  id          String      @id @default(cuid())
+  userId      String
+  status      ResetStatus @default(PENDING)
+  requestedAt DateTime    @default(now())
+  approvedAt  DateTime?
+  approvedBy  String?
+  expiresAt   DateTime
+  token       String?     @unique
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  approver    User?       @relation("ApprovedBy", fields: [approvedBy], references: [id])
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([token])
+}
+
+model ResidentRequest {
+  id                   String           @id @default(cuid())
+  userId               String
+  plotNumber           String
+  requestType          RequestType
+  status               RequestStatus    @default(PENDING)
+  description          String
+  adminNotes           String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  newPlotSize          Int?
+  familyMemberName     String?
+  familyMemberRelation String?
+  familyMemberContact  String?
+  resolvedAt           DateTime?
+  resolvedBy           String?
+  lastResidentReplyAt  DateTime?
+  reopenedAt           DateTime?
+  reopenCount          Int              @default(0)
+  comments             RequestComment[]
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([status])
+  @@index([requestType])
+  @@index([lastResidentReplyAt])
+}
+
+model RequestComment {
+  id             String          @id @default(cuid())
+  requestId      String
+  authorId       String
+  content        String
+  isAdminComment Boolean         @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  author         User            @relation("CommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  request        ResidentRequest @relation(fields: [requestId], references: [id], onDelete: Cascade)
+
+  @@index([requestId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+model FamilyMember {
+  id           String   @id @default(cuid())
+  userId       String
+  name         String
+  relationship String
+  contact      String
+  addedAt      DateTime @default(now())
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model LedgerEntry {
+  id          String          @id @default(cuid())
+  userId      String?
+  date        DateTime
+  description String
+  amount      Float
+  type        TransactionType
+  category    LedgerCategory
+  balance     Float
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  user        User?           @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([date])
+  @@index([category])
+}
+
+model SocietySettings {
+  id                    String   @id @default(cuid())
+  perSqFtRate           Float
+  sinkingFundPercentage Float
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  totalVillas           Int      @default(47)
+}
+
+model Villa {
+  id         String   @id @default(cuid())
+  villaNo    Int      @unique
+  type       String
+  areaInSqM  Float
+  ownerName  String
+  areaInSqFt Float
+  remarks    String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([villaNo])
+  @@index([ownerName])
+}
+
+model AppConfig {
+  id          Int      @id @default(autoincrement())
+  configKey   String   @unique @map("config_key")
+  configValue Json     @map("config_value")
+  updatedAt   DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([configKey])
+  @@map("app_config")
+}
+
+model MonthlyExpense {
+  id          String   @id @default(cuid())
+  month       Int
+  year        Int
+  category    String
+  amount      Float
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@unique([month, year, category])
+  @@index([month, year])
+  @@index([category])
+}
+
+model Announcement {
+  id          String             @id @default(cuid())
+  title       String
+  content     String
+  category    String
+  priority    String
+  isActive    Boolean            @default(true)
+  publishDate DateTime           @default(now())
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+  files       AnnouncementFile[]
+
+  @@index([publishDate])
+  @@index([category])
+  @@index([priority])
+  @@index([isActive])
+}
+
+model AnnouncementFile {
+  id             String       @id @default(cuid())
+  announcementId String
+  url            String
+  name           String
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+
+  @@index([announcementId])
+}
+
+enum UserRole {
+  RESIDENT
+  ADMIN
+}
+
+enum ResetStatus {
+  PENDING
+  APPROVED
+  COMPLETED
+  EXPIRED
+  DENIED
+}
+
+enum RequestType {
+  PLOT_SIZE_UPDATE
+  PAYMENT_ISSUE
+  EXPENSE_SHEET_MONTHLY
+  EXPENSE_SHEET_YEARLY
+  ADD_FAMILY_MEMBER
+  PASSWORD_RESET
+}
+
+enum RequestStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  REJECTED
+  REOPENED
+}
+
+enum TransactionType {
+  DEBIT
+  CREDIT
+}
+
+enum LedgerCategory {
+  CORE_OPERATIONS
+  SINKING_FUND
+}

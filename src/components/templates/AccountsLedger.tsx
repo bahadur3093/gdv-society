@@ -1,15 +1,14 @@
 'use client';
 
-import { ResidentUser } from '@/types';
 import { formatCurrency, formatDate, MOCK_LEDGER_ENTRIES } from '@/utils';
 import { Receipt, TrendingDown, TrendingUp } from 'lucide-react';
+import { useUser } from '../providers/UserProvider';
 
-interface AccountsLedgerProps {
-  currentUser?: ResidentUser;
-}
 
-export default function AccountsLedger({ currentUser }: AccountsLedgerProps) {
-  if (!currentUser) {
+export default function AccountsLedger() {
+  const user = useUser();
+  
+  if (!user) {
     return (
       <div className="text-center py-12">
         <p className="text-slate-400">No user data available</p>

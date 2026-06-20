@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAdmin } from '@/lib/auth/auth-helpers';
 import { paginationSchema } from '@/lib/validation/common';
 import type { ApiResponse, User, PaginatedResponse } from '@/types';
 import { HttpStatus } from '@/types';
+import { requireAdmin } from '@/lib/auth/auth';
 
 export async function GET(request: NextRequest) {
   try {

@@ -1,18 +1,14 @@
 'use client';
 
-import { useState, useMemo, useEffect, useCallback } from 'react';
-import { ResidentRequest, RequestType, RequestStatus, ResidentUser, AppConfigItem, RequestComment } from '@/types';
+import { useState, useMemo, useEffect } from 'react';
+import { ResidentRequest, RequestType, RequestStatus, AppConfigItem, RequestComment } from '@/types';
 import { FileText, Send, Clock, CheckCircle, XCircle, Plus, User, DollarSign, FileSpreadsheet, Users, MessageSquare, RotateCcw, Loader2 } from 'lucide-react';
 import { useAppConfig } from '@/hooks/useAppConfig';
 import Modal from '@/components/molecules/Modal';
 import ConfirmDialog from '@/components/molecules/ConfirmDialog';
 import ToastModal, { ToastState, closedToast, openToast } from '@/components/molecules/ToastModal';
+import { AppUser, useUser } from '../providers/UserProvider';
 
-interface ResidentRequestsProps {
-  currentUser?: ResidentUser;
-}
-
-// Icon mapping for dynamic icon resolution from config
 const ICON_MAP: Record<string, typeof User> = {
   User,
   DollarSign,
@@ -21,10 +17,8 @@ const ICON_MAP: Record<string, typeof User> = {
   FileText,
 };
 
-export default function ResidentRequests({
-  currentUser,
-}: ResidentRequestsProps) {
-  // Fetch request types from app config
+export default function ResidentRequests() {
+  const currentUser = useUser();
   const { config: requestTypesConfig, loading: configLoading, error: configError } = useAppConfig('residents_request_type');
 
   const REQUEST_TYPES = useMemo(() => {
@@ -504,11 +498,11 @@ export default function ResidentRequests({
                 className="w-full px-4 py-3 bg-slate-900/50 border border-slate-800/40 rounded-lg text-slate-100 font-mono placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 focus:border-transparent transition-all duration-300"
                 placeholder="1200.00"
               />
-              {currentUser?.plotData && (
+              {/* {currentUser?.plotData && (
                 <p className="text-xs text-slate-500 mt-1">
                   Current: {currentUser.plotData.areaInSqFt.toFixed(2)} Sq.ft
                 </p>
-              )}
+              )} */}
             </div>
           )}
 

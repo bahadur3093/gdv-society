@@ -1,3 +1,4 @@
+import { UserRole } from "@/types";
 import type { NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 
@@ -40,11 +41,11 @@ export const authConfig = {
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id;
-        session.user.role = token.role;
-        session.user.plotNumber = token.plotNumber;
-        session.user.emailVerified = token.emailVerified || null;
-        session.user.name = token.name;
+        session.user.id = token.id as string;
+        session.user.role = token.role as UserRole;
+        session.user.plotNumber = token.plotNumber as string | null;
+        session.user.emailVerified = token.emailVerified ? new Date(token.emailVerified as string) : null;
+        session.user.name = token.name || '';
       }
       return session;
     },

@@ -3,6 +3,8 @@ import { auth } from "@/lib/auth";
 import UserProvider, {
   type AppUser,
 } from "@/components/providers/UserProvider";
+import prisma from "@/lib/prisma";
+import { PlotData } from "@/types";
 
 export default async function AuthenticatedLayout({
   children,
@@ -11,7 +13,6 @@ export default async function AuthenticatedLayout({
 }) {
   const session = await auth();
 
-  // 🔑 If somehow middleware missed this, redirect now
   if (!session?.user) {
     redirect("/auth/signin");
   }
@@ -20,6 +21,16 @@ export default async function AuthenticatedLayout({
     redirect("/auth/verification-pending");
   }
 
+  const plotNumberInt =
+    session.user.role === "RESIDENT" && session.user.plotNumber
+      ? Number(session.user.plotNumber)
+      : null;
+
+  const plot =
+    plotNumberInt !== null && Number.isInteger(plotNumberInt)
+      ? await prisma.villa.findUnique({ where: { villaNo: plotNumberInt } })
+      : null;
+
   const user: AppUser = {
     id: session.user.id,
     name: session.user.name,
@@ -27,6 +38,7 @@ export default async function AuthenticatedLayout({
     role: session.user.role,
     plotNumber: session.user.plotNumber,
     emailVerified: session.user.emailVerified || null,
+    plotData: plot as unknown as PlotData,
   };
 
   return <UserProvider user={user}>{children}</UserProvider>;

@@ -1,5 +1,6 @@
-import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import type { ApiResponse } from '@/types';
+import { createSlice, createAsyncThunk, PayloadAction } from "@reduxjs/toolkit";
+import type { ApiResponse } from "@/types";
+import { api_get } from "@/lib/services/api";
 
 // Society Settings interface matching API response
 export interface SocietySettings {
@@ -24,24 +25,16 @@ const initialState: SocietySettingsState = {
   lastFetched: null,
 };
 
-// Async thunk to fetch society settings
 export const fetchSocietySettings = createAsyncThunk<
   SocietySettings,
   void,
   { rejectValue: string }
->('societySettings/fetchSocietySettings', async (_, { rejectWithValue }) => {
+>("societySettings/fetchSocietySettings", async (_, { rejectWithValue }) => {
   try {
-    const response = await fetch('/api/society-settings');
-    const data: ApiResponse = await response.json();
-
-    if (!data.success || !data.data) {
-      return rejectWithValue(data.error || 'Failed to fetch society settings');
-    }
-
-    return data.data as SocietySettings;
+    return await api_get<SocietySettings>("api/society-settings");
   } catch (error) {
     return rejectWithValue(
-      error instanceof Error ? error.message : 'An unexpected error occurred'
+      error instanceof Error ? error.message : "An unexpected error occurred",
     );
   }
 });
@@ -51,33 +44,38 @@ export const updateSocietySettings = createAsyncThunk<
   SocietySettings,
   Partial<SocietySettings>,
   { rejectValue: string }
->('societySettings/updateSocietySettings', async (settings, { rejectWithValue }) => {
-  try {
-    const response = await fetch('/api/society-settings', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(settings),
-    });
+>(
+  "societySettings/updateSocietySettings",
+  async (settings, { rejectWithValue }) => {
+    try {
+      const response = await fetch("/api/society-settings", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(settings),
+      });
 
-    const result: ApiResponse = await response.json();
+      const result: ApiResponse = await response.json();
 
-    if (!result.success || !result.data) {
-      return rejectWithValue(result.error || 'Failed to update society settings');
+      if (!result.success || !result.data) {
+        return rejectWithValue(
+          result.error || "Failed to update society settings",
+        );
+      }
+
+      return result.data as SocietySettings;
+    } catch (error) {
+      return rejectWithValue(
+        error instanceof Error ? error.message : "An unexpected error occurred",
+      );
     }
-
-    return result.data as SocietySettings;
-  } catch (error) {
-    return rejectWithValue(
-      error instanceof Error ? error.message : 'An unexpected error occurred'
-    );
-  }
-});
+  },
+);
 
 // Create slice
 const societySettingsSlice = createSlice({
-  name: 'societySettings',
+  name: "societySettings",
   initialState,
   reducers: {
     // Clear error
@@ -103,7 +101,7 @@ const societySettingsSlice = createSlice({
       })
       .addCase(fetchSocietySettings.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to fetch society settings';
+        state.error = action.payload || "Failed to fetch society settings";
       });
 
     // Update society settings
@@ -118,21 +116,25 @@ const societySettingsSlice = createSlice({
       })
       .addCase(updateSocietySettings.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload || 'Failed to update society settings';
+        state.error = action.payload || "Failed to update society settings";
       });
   },
 });
 
 // Export actions
-export const { clearError, updateSettingsLocally } = societySettingsSlice.actions;
+export const { clearError, updateSettingsLocally } =
+  societySettingsSlice.actions;
 
 // Export selectors
-export const selectSocietySettings = (state: { societySettings: SocietySettingsState }) =>
-  state.societySettings.settings;
-export const selectSocietySettingsLoading = (state: { societySettings: SocietySettingsState }) =>
-  state.societySettings.loading;
-export const selectSocietySettingsError = (state: { societySettings: SocietySettingsState }) =>
-  state.societySettings.error;
+export const selectSocietySettings = (state: {
+  societySettings: SocietySettingsState;
+}) => state.societySettings.settings;
+export const selectSocietySettingsLoading = (state: {
+  societySettings: SocietySettingsState;
+}) => state.societySettings.loading;
+export const selectSocietySettingsError = (state: {
+  societySettings: SocietySettingsState;
+}) => state.societySettings.error;
 
 // Export reducer
 export default societySettingsSlice.reducer;
