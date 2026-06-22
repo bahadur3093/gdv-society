@@ -1,412 +1,214 @@
-'use client';
+import { cn } from "@/lib/utils/utils";
+import { forwardRef, type InputHTMLAttributes, type ReactNode } from "react";
 
-import React, { forwardRef } from 'react';
-import { cn } from '@/utils/classNames';
+// ─────────────────────────────────────────────────────────────
+//  Types
+// ─────────────────────────────────────────────────────────────
 
-// Input variant and size types
-export type InputVariant = 'outlined' | 'filled';
-export type InputSize = 'sm' | 'md' | 'lg';
-export type InputState = 'default' | 'error' | 'success';
+export type InputSize = "sm" | "md" | "lg";
+export type InputState = "default" | "error" | "success";
 
-// Input component props interface
-export interface InputProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
-  /** Input variant determines the visual style */
-  variant?: InputVariant;
-  /** Input size */
-  size?: InputSize;
-  /** Input state for validation feedback */
+export interface InputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  "size" | "prefix"
+> {
+  inputSize?: InputSize;
   state?: InputState;
-  /** Whether the input has an error */
-  error?: boolean;
-  /** Whether the input is in a success state */
-  success?: boolean;
-  /** Icon element to display at the start */
-  startIcon?: React.ReactNode;
-  /** Icon element to display at the end */
-  endIcon?: React.ReactNode;
-  /** Helper text to display below the input */
-  helperText?: string;
-  /** Error message to display */
-  errorMessage?: string;
-  /** Success message to display */
-  successMessage?: string;
-  /** Custom className for additional styling */
-  className?: string;
-  /** Custom className for the input wrapper */
-  wrapperClassName?: string;
-  /** ARIA describedby for additional context */
-  'aria-describedby'?: string;
+  /** Icon shown on the left side */
+  leadingIcon?: ReactNode;
+  /** Icon shown on the right side (e.g., calendar, eye for password) */
+  trailingIcon?: ReactNode;
+  /** Text prefix (e.g., "₹", "@") — non-interactive */
+  prefix?: string;
+  /** Text suffix (e.g., "sqft", "%") — non-interactive */
+  suffix?: string;
+  /** Full width (default true) */
+  fullWidth?: boolean;
 }
 
-// Textarea component props interface
-export interface TextareaProps extends Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> {
-  /** Textarea variant determines the visual style */
-  variant?: InputVariant;
-  /** Textarea size */
-  size?: InputSize;
-  /** Textarea state for validation feedback */
-  state?: InputState;
-  /** Whether the textarea has an error */
-  error?: boolean;
-  /** Whether the textarea is in a success state */
-  success?: boolean;
-  /** Helper text to display below the textarea */
-  helperText?: string;
-  /** Error message to display */
-  errorMessage?: string;
-  /** Success message to display */
-  successMessage?: string;
-  /** Whether the textarea should auto-resize */
-  autoResize?: boolean;
-  /** Custom className for additional styling */
-  className?: string;
-  /** Custom className for the textarea wrapper */
-  wrapperClassName?: string;
-  /** ARIA describedby for additional context */
-  'aria-describedby'?: string;
-}
+// ─────────────────────────────────────────────────────────────
+//  Style maps
+// ─────────────────────────────────────────────────────────────
 
-// Variant styles mapping
-const variantStyles: Record<InputVariant, string> = {
-  outlined: [
-    'bg-transparent border border-border',
-    'focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20',
-    'hover:border-brand-primary/50'
-  ].join(' '),
-  
-  filled: [
-    'bg-surface border border-transparent',
-    'focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/20 focus:bg-transparent',
-    'hover:bg-surface/80'
-  ].join(' ')
+const sizeClasses: Record<InputSize, string> = {
+  sm: "h-8 text-body-sm",
+  md: "h-10 text-body",
+  lg: "h-12 text-body-lg",
 };
 
-// Size styles mapping
-const sizeStyles: Record<InputSize, string> = {
-  sm: 'px-3 py-1.5 text-sm min-h-[32px]',
-  md: 'px-3 py-2 text-sm min-h-[40px]',
-  lg: 'px-4 py-2.5 text-base min-h-[48px]'
+const paddingClasses: Record<
+  InputSize,
+  { xLeft: string; xRight: string; iconLeft: string; iconRight: string }
+> = {
+  sm: {
+    xLeft: "pl-2.5",
+    xRight: "pr-2.5",
+    iconLeft: "pl-8",
+    iconRight: "pr-8",
+  },
+  md: { xLeft: "pl-3", xRight: "pr-3", iconLeft: "pl-10", iconRight: "pr-10" },
+  lg: { xLeft: "pl-4", xRight: "pr-4", iconLeft: "pl-12", iconRight: "pr-12" },
 };
 
-// State styles mapping
-const stateStyles: Record<InputState, string> = {
-  default: '',
-  error: 'border-red-500 focus:border-red-500 focus:ring-red-500/20',
-  success: 'border-green-500 focus:border-green-500 focus:ring-green-500/20'
+const iconPositionClasses: Record<
+  InputSize,
+  { left: string; right: string; size: string }
+> = {
+  sm: { left: "left-2", right: "right-2", size: "w-3.5 h-3.5" },
+  md: { left: "left-3", right: "right-3", size: "w-4 h-4" },
+  lg: { left: "left-3.5", right: "right-3.5", size: "w-[18px] h-[18px]" },
 };
 
-// Icon size mapping based on input size
-const iconSizes: Record<InputSize, string> = {
-  sm: 'w-4 h-4',
-  md: 'w-4 h-4',
-  lg: 'w-5 h-5'
+const stateClasses: Record<InputState, string> = {
+  default: cn(
+    "border-border-default",
+    "focus-within:border-brand-primary",
+    "focus-within:ring-2 focus-within:ring-brand-primary/30",
+    "focus-within:ring-offset-2 focus-within:ring-offset-bg-base",
+  ),
+  error: cn(
+    "border-danger",
+    "focus-within:border-danger",
+    "focus-within:ring-2 focus-within:ring-danger/30",
+    "focus-within:ring-offset-2 focus-within:ring-offset-bg-base",
+  ),
+  success: cn(
+    "border-success",
+    "focus-within:border-success",
+    "focus-within:ring-2 focus-within:ring-success/30",
+    "focus-within:ring-offset-2 focus-within:ring-offset-bg-base",
+  ),
 };
 
-/**
- * Input component - A flexible input field with validation states and icons
- * 
- * Features:
- * - Multiple variants (outlined, filled)
- * - Configurable sizes (sm, md, lg)
- * - Validation states (default, error, success)
- * - Start and end icon support
- * - Helper text and error messages
- * - Full accessibility support with proper ARIA attributes
- * - Keyboard navigation and focus management
- * 
- * @example
- * ```tsx
- * <Input
- *   placeholder="Enter your email"
- *   type="email"
- *   startIcon={<Icon name="user" />}
- *   helperText="We'll never share your email"
- * />
- * 
- * <Input
- *   value={value}
- *   onChange={handleChange}
- *   error={!!error}
- *   errorMessage={error}
- *   variant="filled"
- *   size="lg"
- * />
- * ```
- */
-export const Input = forwardRef<HTMLInputElement, InputProps>((
+// ─────────────────────────────────────────────────────────────
+//  Component
+// ─────────────────────────────────────────────────────────────
+
+const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   {
-    variant = 'outlined',
-    size = 'md',
-    state = 'default',
-    error = false,
-    success = false,
-    startIcon,
-    endIcon,
-    helperText,
-    errorMessage,
-    successMessage,
+    inputSize = "md",
+    state = "default",
+    leadingIcon,
+    trailingIcon,
+    prefix,
+    suffix,
+    fullWidth = true,
+    disabled,
     className,
-    wrapperClassName,
-    disabled = false,
-    'aria-describedby': ariaDescribedBy,
     ...props
   },
-  ref
-) => {
-  // Determine the actual state based on props
-  const actualState = error ? 'error' : success ? 'success' : state;
-  
-  // Generate unique IDs for helper text
-  const helperId = React.useId();
-  const helperTextId = `${helperId}-helper`;
-  const errorId = `${helperId}-error`;
-  const successId = `${helperId}-success`;
-  
-  // Determine which message to show
-  const message = errorMessage || successMessage || helperText;
-  const messageId = error && errorMessage ? errorId : 
-                   success && successMessage ? successId : 
-                   helperText ? helperTextId : undefined;
-  
-  // Combine ARIA describedby
-  const combinedAriaDescribedBy = [ariaDescribedBy, messageId].filter(Boolean).join(' ') || undefined;
+  ref,
+) {
+  const padding = paddingClasses[inputSize];
+  const iconPos = iconPositionClasses[inputSize];
 
-  // Combine all input styles
-  const inputClasses = cn(
-    // Base styles
-    'w-full rounded-lg font-medium transition-all duration-200',
-    'focus:outline-none focus:ring-offset-2 focus:ring-offset-background',
-    'disabled:opacity-50 disabled:cursor-not-allowed',
-    'placeholder:text-text-muted',
-    
-    // Variant styles
-    variantStyles[variant],
-    
-    // Size styles
-    sizeStyles[size],
-    
-    // State styles
-    stateStyles[actualState],
-    
-    // Icon padding adjustments
-    startIcon && {
-      sm: 'pl-9',
-      md: 'pl-10',
-      lg: 'pl-11'
-    }[size],
-    
-    endIcon && {
-      sm: 'pr-9',
-      md: 'pr-10',
-      lg: 'pr-11'
-    }[size],
-    
-    // Custom className
-    className
-  );
-
-  // Wrapper styles
-  const wrapperClasses = cn(
-    'relative',
-    wrapperClassName
-  );
-
-  // Icon wrapper styles
-  const iconWrapperClasses = (position: 'start' | 'end') => cn(
-    'absolute top-1/2 transform -translate-y-1/2 flex items-center justify-center text-text-muted',
-    iconSizes[size],
-    position === 'start' ? {
-      sm: 'left-2.5',
-      md: 'left-3',
-      lg: 'left-3.5'
-    }[size] : {
-      sm: 'right-2.5',
-      md: 'right-3',
-      lg: 'right-3.5'
-    }[size]
-  );
+  // Determine left/right padding based on what's present
+  const hasLeftIcon = !!leadingIcon;
+  const hasLeftPrefix = !!prefix;
+  const hasRightIcon = !!trailingIcon;
+  const hasRightSuffix = !!suffix;
 
   return (
-    <div className={wrapperClasses}>
-      <div className="relative">
-        {/* Start icon */}
-        {startIcon && (
-          <div className={iconWrapperClasses('start')}>
-            {startIcon}
-          </div>
-        )}
-        
-        {/* Input field */}
-        <input
-          ref={ref}
-          className={inputClasses}
-          disabled={disabled}
-          aria-describedby={combinedAriaDescribedBy}
-          aria-invalid={error}
-          {...props}
-        />
-        
-        {/* End icon */}
-        {endIcon && (
-          <div className={iconWrapperClasses('end')}>
-            {endIcon}
-          </div>
-        )}
-      </div>
-      
-      {/* Helper/Error/Success text */}
-      {message && (
-        <p
-          id={messageId}
+    <div
+      className={cn(
+        // Layout
+        "relative inline-flex items-center",
+        fullWidth && "w-full",
+        // Surface
+        "bg-bg-elevated rounded",
+        "border",
+        // Motion
+        "transition-all duration-(--duration)",
+        // State
+        stateClasses[state],
+        disabled && "opacity-50 cursor-not-allowed bg-bg-sunken",
+        className,
+      )}
+    >
+      {/* Leading icon */}
+      {leadingIcon && (
+        <span
           className={cn(
-            'mt-1.5 text-xs',
-            error ? 'text-red-500' : success ? 'text-green-500' : 'text-text-muted'
+            "absolute pointer-events-none flex items-center justify-center",
+            "text-text-muted",
+            iconPos.left,
+            iconPos.size,
+            disabled && "opacity-50",
           )}
         >
-          {message}
-        </p>
+          {leadingIcon}
+        </span>
       )}
-    </div>
-  );
-});
 
-Input.displayName = 'Input';
+      {/* Prefix text */}
+      {prefix && !leadingIcon && (
+        <span
+          className={cn(
+            "pl-3 text-text-secondary font-medium pointer-events-none",
+            inputSize === "sm" && "text-body-sm",
+            inputSize === "md" && "text-body",
+            inputSize === "lg" && "text-body-lg",
+          )}
+        >
+          {prefix}
+        </span>
+      )}
 
-/**
- * Textarea component - A flexible textarea field with validation states
- * 
- * Features:
- * - Multiple variants (outlined, filled)
- * - Configurable sizes (sm, md, lg)
- * - Validation states (default, error, success)
- * - Auto-resize functionality
- * - Helper text and error messages
- * - Full accessibility support with proper ARIA attributes
- * 
- * @example
- * ```tsx
- * <Textarea
- *   placeholder="Enter your message"
- *   rows={4}
- *   helperText="Maximum 500 characters"
- * />
- * 
- * <Textarea
- *   value={value}
- *   onChange={handleChange}
- *   autoResize
- *   error={!!error}
- *   errorMessage={error}
- * />
- * ```
- */
-export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>((
-  {
-    variant = 'outlined',
-    size = 'md',
-    state = 'default',
-    error = false,
-    success = false,
-    helperText,
-    errorMessage,
-    successMessage,
-    autoResize = false,
-    className,
-    wrapperClassName,
-    disabled = false,
-    rows = 3,
-    'aria-describedby': ariaDescribedBy,
-    ...props
-  },
-  ref
-) => {
-  // Determine the actual state based on props
-  const actualState = error ? 'error' : success ? 'success' : state;
-  
-  // Generate unique IDs for helper text
-  const helperId = React.useId();
-  const helperTextId = `${helperId}-helper`;
-  const errorId = `${helperId}-error`;
-  const successId = `${helperId}-success`;
-  
-  // Determine which message to show
-  const message = errorMessage || successMessage || helperText;
-  const messageId = error && errorMessage ? errorId : 
-                   success && successMessage ? successId : 
-                   helperText ? helperTextId : undefined;
-  
-  // Combine ARIA describedby
-  const combinedAriaDescribedBy = [ariaDescribedBy, messageId].filter(Boolean).join(' ') || undefined;
-
-  // Auto-resize functionality
-  const handleAutoResize = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    if (autoResize) {
-      const textarea = event.target;
-      textarea.style.height = 'auto';
-      textarea.style.height = `${textarea.scrollHeight}px`;
-    }
-    props.onChange?.(event);
-  };
-
-  // Combine all textarea styles
-  const textareaClasses = cn(
-    // Base styles
-    'w-full rounded-lg font-medium transition-all duration-200 resize-none',
-    'focus:outline-none focus:ring-offset-2 focus:ring-offset-background',
-    'disabled:opacity-50 disabled:cursor-not-allowed',
-    'placeholder:text-text-muted',
-    
-    // Variant styles
-    variantStyles[variant],
-    
-    // Size styles
-    sizeStyles[size],
-    
-    // State styles
-    stateStyles[actualState],
-    
-    // Auto-resize styles
-    autoResize && 'overflow-hidden',
-    
-    // Custom className
-    className
-  );
-
-  // Wrapper styles
-  const wrapperClasses = cn(
-    'relative',
-    wrapperClassName
-  );
-
-  return (
-    <div className={wrapperClasses}>
-      <textarea
+      <input
         ref={ref}
-        className={textareaClasses}
         disabled={disabled}
-        rows={rows}
-        aria-describedby={combinedAriaDescribedBy}
-        aria-invalid={error}
-        onChange={handleAutoResize}
+        className={cn(
+          "flex-1 bg-transparent outline-none",
+          "text-text-primary placeholder:text-text-muted",
+          "outline-none focus:outline-none focus-visible:outline-none",
+          sizeClasses[inputSize],
+          hasLeftIcon
+            ? padding.iconLeft
+            : hasLeftPrefix
+              ? "pl-2"
+              : padding.xLeft,
+          hasRightIcon
+            ? padding.iconRight
+            : hasRightSuffix
+              ? "pr-2"
+              : padding.xRight,
+          disabled && "cursor-not-allowed",
+          "[&::-webkit-inner-spin-button]:appearance-none",
+          "[&::-webkit-outer-spin-button]:appearance-none",
+          "[type=number]:[appearance:textfield]",
+        )}
         {...props}
       />
-      
-      {/* Helper/Error/Success text */}
-      {message && (
-        <p
-          id={messageId}
+
+      {suffix && !trailingIcon && (
+        <span
           className={cn(
-            'mt-1.5 text-xs',
-            error ? 'text-red-500' : success ? 'text-green-500' : 'text-text-muted'
+            "pr-3 text-text-muted pointer-events-none",
+            inputSize === "sm" && "text-body-sm",
+            inputSize === "md" && "text-body",
+            inputSize === "lg" && "text-body-lg",
           )}
         >
-          {message}
-        </p>
+          {suffix}
+        </span>
+      )}
+
+      {/* Trailing icon */}
+      {trailingIcon && (
+        <span
+          className={cn(
+            "absolute flex items-center justify-center",
+            "text-text-muted",
+            iconPos.right,
+            iconPos.size,
+            disabled && "opacity-50",
+          )}
+        >
+          {trailingIcon}
+        </span>
       )}
     </div>
   );
 });
 
-Textarea.displayName = 'Textarea';
-
-// Types are already exported above
+export default Input;

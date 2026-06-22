@@ -1,12 +1,13 @@
-import { CreditCard } from 'lucide-react';
-import { prisma } from '@/lib/prisma';
-import { BillStatus } from '@prisma/client';
-import RecordPaymentForm from './_components/RecordPaymentForm';
-import { requireAdmin } from '@/lib/auth/auth';
+import { CreditCard } from "lucide-react";
+import { prisma } from "@/lib/prisma";
+import { BillStatus } from "@prisma/client";
+import PageHeader from "@/components/navigation/PageHeader";
+import RecordPaymentForm from "./_components/RecordPaymentForm";
+import { requireAdmin } from "@/lib/auth/auth";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
-export const metadata = { title: 'Record Payment — Admin' };
+export const metadata = { title: "Record Payment — Admin" };
 
 interface PageProps {
   searchParams: Promise<{ villa?: string }>;
@@ -16,7 +17,7 @@ export default async function RecordPaymentPage({ searchParams }: PageProps) {
   await requireAdmin();
   const { villa: preselectedVillaId } = await searchParams;
 
-  // Fetch all villas with their outstanding balance (computed)
+  // Fetch all billable villas with their outstanding balance
   const villas = await prisma.villa.findMany({
     where: { isBillable: true },
     select: {
@@ -33,10 +34,10 @@ export default async function RecordPaymentPage({ searchParams }: PageProps) {
         select: { amount: true, allocations: { select: { amount: true } } },
       },
     },
-    orderBy: { villaNo: 'asc' },
+    orderBy: { villaNo: "asc" },
   });
 
-  // Also fetch levies for claimed villas (per-user concept)
+  // Levies (per-user concept, only for claimed villas)
   const claimedUserIds = villas
     .map((v) => v.userId)
     .filter((id): id is string => id !== null);
@@ -47,7 +48,11 @@ export default async function RecordPaymentPage({ searchParams }: PageProps) {
           userId: { in: claimedUserIds },
           status: { in: [BillStatus.PENDING, BillStatus.PARTIAL] },
         },
-        select: { userId: true, amount: true, allocations: { select: { amount: true } } },
+        select: {
+          userId: true,
+          amount: true,
+          allocations: { select: { amount: true } },
+        },
       })
     : [];
 
@@ -59,7 +64,7 @@ export default async function RecordPaymentPage({ searchParams }: PageProps) {
     leviesByUserId.set(l.userId, (leviesByUserId.get(l.userId) ?? 0) + owed);
   }
 
-  // Compute per-villa outstanding
+  // Compute per-villa outstanding + build options
   const options = villas
     .map((v) => {
       const billsOwed = v.maintenanceBills.reduce((s, b) => {
@@ -74,10 +79,11 @@ export default async function RecordPaymentPage({ searchParams }: PageProps) {
         ownerName: v.ownerName,
         userId: v.userId,
         residentName: v.user?.name ?? null,
+        residentEmail: v.user?.email ?? null,
+        areaInSqFt: v.areaInSqFt,
         outstanding: billsOwed + leviesOwed,
       };
     })
-    // Sort: villas with outstanding first, by villa no
     .sort((a, b) => {
       if (a.outstanding > 0 && b.outstanding === 0) return -1;
       if (a.outstanding === 0 && b.outstanding > 0) return 1;
@@ -85,16 +91,17 @@ export default async function RecordPaymentPage({ searchParams }: PageProps) {
     });
 
   return (
-    <div className="max-w-3xl mx-auto space-y-6">
-      <header className="flex items-center gap-3">
-        <CreditCard className="w-8 h-8 text-violet-400" />
-        <div>
-          <h1 className="text-3xl font-bold text-slate-100">Record Payment</h1>
-          <p className="text-slate-400">
-            Record a payment received from a villa owner or resident. It will be auto-allocated to the oldest unpaid bills first.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-6 md:space-y-8 max-w-6xl mx-auto">
+      <PageHeader
+        leading={
+          <div className="w-12 h-12 rounded-md bg-success/10 text-success flex items-center justify-center shrink-0">
+            <CreditCard className="w-6 h-6" />
+          </div>
+        }
+        back={{ href: "/admin/ledger", label: "Back to Master Ledger" }}
+        title="Record Payment"
+        description="Log a payment received from a villa. It will be auto-allocated to the oldest unpaid items first."
+      />
 
       <RecordPaymentForm
         villas={options}

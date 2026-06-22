@@ -68,6 +68,9 @@ graphify-out/
 *.swo
 *~
 
+# Design mockups / Figma exports
+Designs/
+
 # OS generated files
 .DS_Store
 .DS_Store?

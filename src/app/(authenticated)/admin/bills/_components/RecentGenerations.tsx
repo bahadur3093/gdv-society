@@ -1,4 +1,10 @@
-import { History } from "lucide-react";
+import Link from "next/link";
+import { History, ChevronRight, Receipt } from "lucide-react";
+import Section from "@/components/organisms/Section";
+import Card from "@/components/atoms/Card";
+import EmptyState from "@/components/organisms/EmptyState";
+import { cn, formatCurrency, formatRelativeTime } from "@/lib/utils/utils";
+import Badge from "@/components/atoms/Badge";
 
 interface Group {
   month: number;
@@ -8,53 +14,119 @@ interface Group {
   latest: Date;
 }
 
-const inr = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
-const monthName = (m: number) =>
-  new Date(2000, m - 1, 1).toLocaleString("en-IN", { month: "long" });
+interface Props {
+  groups: Group[];
+}
 
-const formatDate = (d: Date) =>
-  new Date(d).toLocaleDateString("en-IN", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+export default function RecentGenerations({ groups }: Props) {
+  return (
+    <Section
+      title="Recent Generations"
+      description="Last 6 billing cycles"
+      icon={<History />}
+    >
+      {groups.length === 0 ? (
+        <Card padding="md">
+          <EmptyState
+            size="sm"
+            icon={<Receipt />}
+            title="No bills generated yet"
+            description="When you generate your first bills, they'll show up here."
+          />
+        </Card>
+      ) : (
+        <Card padding="none">
+          <ul className="divide-y divide-border-subtle">
+            {groups.map((group) => (
+              <GenerationRow
+                key={`${group.year}-${group.month}`}
+                group={group}
+              />
+            ))}
+          </ul>
+        </Card>
+      )}
+    </Section>
+  );
+}
 
-export default function RecentGenerations({ groups }: { groups: Group[] }) {
-  if (groups.length === 0) return null;
+function GenerationRow({ group }: { group: Group }) {
+  // Current month special tag
+  const now = new Date();
+  const isCurrent =
+    group.month === now.getMonth() + 1 && group.year === now.getFullYear();
 
   return (
-    <section className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-6">
-      <div className="flex items-center gap-2 mb-4">
-        <History className="w-5 h-5 text-slate-400" />
-        <h2 className="text-lg font-semibold text-slate-100">
-          Recent Generations
-        </h2>
-      </div>
+    <li>
+      <Link
+        href={`/admin/bills?month=${group.month}&year=${group.year}`}
+        className={cn(
+          "group flex items-center gap-4",
+          "px-4 py-3 md:px-5 md:py-4",
+          "hover:bg-bg-sunken/50",
+          "transition-colors duration-(--duration-fast)",
+          "focus-visible:outline-none focus-visible:bg-bg-sunken/50",
+        )}
+      >
+        {/* Icon */}
+        <div
+          className={cn(
+            "shrink-0 w-10 h-10 rounded-md flex items-center justify-center",
+            "bg-brand-primary/10 text-brand-primary",
+          )}
+        >
+          <Receipt className="w-5 h-5" />
+        </div>
 
-      <div className="space-y-2">
-        {groups.map((g) => (
-          <div
-            key={`${g.year}-${g.month}`}
-            className="flex items-center justify-between py-2 px-3 rounded hover:bg-slate-800/30"
-          >
-            <div>
-              <p className="text-slate-200 font-medium">
-                {monthName(g.month)} {g.year}
-              </p>
-              <p className="text-xs text-slate-500">
-                {g.count} bills • Generated {formatDate(g.latest)}
-              </p>
-            </div>
-            <p className="text-sm font-mono text-emerald-300">{inr(g.total)}</p>
+        {/* Text */}
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-body font-medium text-text-primary">
+              {MONTHS[group.month - 1]} {group.year}
+            </p>
+            {isCurrent && (
+              <Badge size="sm" variant="brand" outline>
+                Current
+              </Badge>
+            )}
           </div>
-        ))}
-      </div>
-    </section>
+          <p className="text-body-sm text-text-muted mt-0.5">
+            {group.count} bill{group.count === 1 ? "" : "s"} •{" "}
+            {formatRelativeTime(group.latest)}
+          </p>
+        </div>
+
+        {/* Amount */}
+        <div className="shrink-0 text-right hidden sm:block">
+          <p className="text-body font-mono font-semibold text-text-primary">
+            {formatCurrency(group.total)}
+          </p>
+        </div>
+
+        {/* Chevron */}
+        <ChevronRight
+          className={cn(
+            "w-4 h-4 text-text-muted shrink-0",
+            "transition-transform duration-(--duration-fast)",
+            "group-hover:translate-x-0.5",
+          )}
+        />
+      </Link>
+    </li>
   );
 }

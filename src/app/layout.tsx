@@ -3,6 +3,7 @@ import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import { Providers } from "./providers";
 import { auth } from "@/lib/auth/auth";
+import { Toaster } from "@/components/atoms/Toast";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -18,8 +19,26 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "GDV Resident Hub",
-  description: "Modern multi-screen web application for GDV Society residents and administrators to manage maintenance, accounts, and community operations.",
+  description:
+    "Modern multi-screen web application for GDV Society residents and administrators to manage maintenance, accounts, and community operations.",
 };
+
+const themeInitScript = `
+(function() {
+  try {
+    var stored = localStorage.getItem('gdv-theme');
+    var pref = (stored === 'light' || stored === 'dark' || stored === 'system') ? stored : 'dark';
+    var resolved = pref;
+    if (pref === 'system') {
+      resolved = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+    }
+    document.documentElement.setAttribute('data-theme', resolved);
+    document.documentElement.style.colorScheme = resolved;
+  } catch (e) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+`;
 
 export default async function RootLayout({
   children,
@@ -32,9 +51,18 @@ export default async function RootLayout({
     <html
       lang="en"
       className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
-        <Providers session={session}>{children}</Providers>
+      <head>
+        {/* 🆕 Runs immediately, sets data-theme before paint */}
+        <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
+      </head>
+
+      <body className="min-h-full flex flex-col bg-bg-base text-text-primary">
+        <Providers session={session}>
+          {children}
+          <Toaster />
+        </Providers>
       </body>
     </html>
   );

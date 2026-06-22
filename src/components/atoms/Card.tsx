@@ -1,264 +1,247 @@
-'use client';
+// components/ui/Card.tsx
 
-import React, { forwardRef } from 'react';
-import { cn } from '@/utils/classNames';
+import { cn } from "@/lib/utils/utils";
+import {
+  forwardRef,
+  type HTMLAttributes,
+  type ReactNode,
+  cloneElement,
+  isValidElement,
+} from "react";
 
-// Card variant types
-export type CardVariant = 'basic' | 'interactive' | 'media' | 'statistics';
-export type CardElevation = 'none' | 'low' | 'medium' | 'high';
-export type CardPadding = 'none' | 'sm' | 'md' | 'lg' | 'xl';
+// ─────────────────────────────────────────────────────────────
+//  Types
+// ─────────────────────────────────────────────────────────────
 
-// Card component props interface
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Card variant determines the visual style and behavior */
+export type CardVariant =
+  | "default"
+  | "sunken"
+  | "gradient"
+  | "glass"
+  | "outline";
+export type CardPadding = "none" | "sm" | "md" | "lg";
+export type CardRadius = "sm" | "md" | "lg" | "xl";
+
+export interface CardProps extends HTMLAttributes<HTMLDivElement> {
   variant?: CardVariant;
-  /** Elevation level controls shadow depth */
-  elevation?: CardElevation;
-  /** Padding size for card content */
   padding?: CardPadding;
-  /** Whether the card should be clickable (adds hover effects) */
-  clickable?: boolean;
-  /** Whether the card is in a selected state */
-  selected?: boolean;
-  /** Whether the card is in a disabled state */
-  disabled?: boolean;
-  /** Custom className for additional styling */
-  className?: string;
-  /** Card content */
-  children: React.ReactNode;
-  /** Optional click handler for interactive cards */
-  onClick?: (event: React.MouseEvent<HTMLDivElement>) => void;
-  /** ARIA label for accessibility */
-  'aria-label'?: string;
-  /** ARIA role for semantic meaning */
-  role?: string;
+  radius?: CardRadius;
+  /** Hover state + cursor pointer (for clickable cards) */
+  interactive?: boolean;
+  /** Stretch to fill parent height (useful in grids) */
+  fullHeight?: boolean;
+  /** Render as the child element (e.g., Link, button) */
+  asChild?: boolean;
 }
 
-// Compound components for Card structure
-export interface CardHeaderProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
-  children: React.ReactNode;
-}
+// ─────────────────────────────────────────────────────────────
+//  Style maps
+// ─────────────────────────────────────────────────────────────
 
-export interface CardBodyProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
-  children: React.ReactNode;
-}
-
-export interface CardFooterProps extends React.HTMLAttributes<HTMLDivElement> {
-  className?: string;
-  children: React.ReactNode;
-}
-
-// Variant styles mapping
-const variantStyles: Record<CardVariant, string> = {
-  basic: 'bg-surface border border-border',
-  interactive: 'bg-surface border border-border transition-all duration-200 hover:border-brand-primary/50 hover:shadow-lg cursor-pointer',
-  media: 'bg-surface border border-border overflow-hidden',
-  statistics: 'bg-gradient-to-br from-surface to-surface/80 border border-brand-primary/20 backdrop-blur-sm'
+const variantClasses: Record<CardVariant, string> = {
+  default: cn("bg-bg-elevated border border-border-subtle", "shadow-sm"),
+  sunken: cn("bg-bg-sunken border border-border-subtle"),
+  gradient: cn(
+    "bg-bg-elevated border border-border-subtle",
+    "relative overflow-hidden",
+    // Gradient mesh background
+    "before:absolute before:inset-0 before:pointer-events-none",
+    "before:bg-[image:var(--gradient-aurora)]",
+    "before:opacity-100",
+    "shadow-md",
+  ),
+  glass: cn(
+    "bg-bg-elevated/70 border border-border-subtle",
+    "backdrop-blur-xl",
+    "shadow-md",
+  ),
+  outline: cn("bg-transparent border border-border-default"),
 };
 
-// Elevation styles mapping
-const elevationStyles: Record<CardElevation, string> = {
-  none: '',
-  low: 'shadow-sm',
-  medium: 'shadow-md',
-  high: 'shadow-tactical'
+const paddingClasses: Record<CardPadding, string> = {
+  none: "",
+  sm: "p-4",
+  md: "p-6",
+  lg: "p-8",
 };
 
-// Padding styles mapping
-const paddingStyles: Record<CardPadding, string> = {
-  none: 'p-0',
-  sm: 'p-3',
-  md: 'p-4',
-  lg: 'p-6',
-  xl: 'p-8'
+const radiusClasses: Record<CardRadius, string> = {
+  sm: "rounded",
+  md: "rounded-md",
+  lg: "rounded-lg",
+  xl: "rounded-xl",
 };
 
-/**
- * Card component - A flexible container for grouping related content
- * 
- * Features:
- * - Multiple variants (basic, interactive, media, statistics)
- * - Configurable elevation and padding
- * - Accessibility support with proper ARIA attributes
- * - Keyboard navigation for interactive cards
- * - Compound components for structured content (Header, Body, Footer)
- * 
- * @example
- * ```tsx
- * <Card variant="interactive" elevation="medium" padding="lg" onClick={handleClick}>
- *   <Card.Header>
- *     <h3>Card Title</h3>
- *   </Card.Header>
- *   <Card.Body>
- *     <p>Card content goes here</p>
- *   </Card.Body>
- *   <Card.Footer>
- *     <Button>Action</Button>
- *   </Card.Footer>
- * </Card>
- * ```
- */
-export const Card = forwardRef<HTMLDivElement, CardProps>((
+const interactiveClasses = cn(
+  "cursor-pointer",
+  "transition-all duration-[var(--duration)]",
+  "hover:shadow-md hover:border-border-default",
+  "hover:-translate-y-0.5",
+  "active:translate-y-0 active:shadow-sm",
+  "focus-visible:outline-none focus-visible:ring-2",
+  "focus-visible:ring-brand-primary focus-visible:ring-offset-2",
+  "focus-visible:ring-offset-bg-base",
+);
+
+// ─────────────────────────────────────────────────────────────
+//  Card
+// ─────────────────────────────────────────────────────────────
+
+const Card = forwardRef<HTMLDivElement, CardProps>(function Card(
   {
-    variant = 'basic',
-    elevation = 'low',
-    padding = 'md',
-    clickable = false,
-    selected = false,
-    disabled = false,
+    variant = "default",
+    padding = "md",
+    radius = "md",
+    interactive = false,
+    fullHeight = false,
+    asChild = false,
     className,
     children,
-    onClick,
-    'aria-label': ariaLabel,
-    role,
     ...props
   },
-  ref
-) => {
-  // Determine if card should be interactive
-  const isInteractive = clickable || onClick || variant === 'interactive';
-  
-  // Handle keyboard events for accessibility
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-    if (isInteractive && !disabled && (event.key === 'Enter' || event.key === ' ')) {
-      event.preventDefault();
-      onClick?.(event as any);
-    }
-  };
-
-  // Combine all styles
-  const cardClasses = cn(
-    // Base styles
-    'rounded-lg transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background',
-    
-    // Variant styles
-    variantStyles[variant],
-    
-    // Elevation styles
-    elevationStyles[elevation],
-    
-    // Padding styles
-    paddingStyles[padding],
-    
-    // Interactive states
-    isInteractive && !disabled && [
-      'focus-visible:outline-none',
-      'hover:shadow-lg',
-      variant === 'interactive' && 'hover:border-brand-primary/50'
-    ],
-    
-    // Selected state
-    selected && [
-      'border-brand-primary',
-      'ring-2 ring-brand-primary/20'
-    ],
-    
-    // Disabled state
-    disabled && [
-      'opacity-50',
-      'cursor-not-allowed',
-      'pointer-events-none'
-    ],
-    
-    // Custom className
-    className
+  ref,
+) {
+  const baseClasses = cn(
+    "relative",
+    variantClasses[variant],
+    paddingClasses[padding],
+    radiusClasses[radius],
+    interactive && interactiveClasses,
+    fullHeight && "h-full",
+    className,
   );
 
+  // For variant="gradient", wrap children to layer above the ::before pseudo
+  const content =
+    variant === "gradient" ? (
+      <div className="relative z-10">{children}</div>
+    ) : (
+      children
+    );
+
+  // asChild: pass classes onto a child Link or button
+  if (asChild && isValidElement(children)) {
+    const child = children as React.ReactElement<{ className?: string }>;
+    return cloneElement(child, {
+      className: cn(baseClasses, child.props.className),
+      ...(props as Record<string, unknown>),
+    });
+  }
+
   return (
-    <div
-      ref={ref}
-      className={cardClasses}
-      onClick={!disabled ? onClick : undefined}
-      onKeyDown={!disabled ? handleKeyDown : undefined}
-      tabIndex={isInteractive && !disabled ? 0 : undefined}
-      role={role || (isInteractive ? 'button' : undefined)}
-      aria-label={ariaLabel}
-      aria-disabled={disabled}
-      aria-pressed={selected}
-      {...props}
-    >
-      {children}
+    <div ref={ref} className={baseClasses} {...props}>
+      {content}
     </div>
   );
 });
 
-Card.displayName = 'Card';
+export default Card;
 
-// Card Header component
-export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>((
-  { className, children, ...props },
-  ref
-) => {
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        'flex flex-col space-y-1.5 p-6 pb-0',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-});
+// ─────────────────────────────────────────────────────────────
+//  CardHeader — title + description + optional action
+// ─────────────────────────────────────────────────────────────
 
-CardHeader.displayName = 'CardHeader';
+export interface CardHeaderProps extends Omit<HTMLAttributes<HTMLDivElement>, 'title'> {
+  title?: ReactNode;
+  description?: ReactNode;
+  action?: ReactNode;
+  /** Visual weight of the title */
+  size?: "sm" | "md" | "lg";
+}
 
-// Card Body component
-export const CardBody = forwardRef<HTMLDivElement, CardBodyProps>((
-  { className, children, ...props },
-  ref
-) => {
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        'p-6 pt-0',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-});
-
-CardBody.displayName = 'CardBody';
-
-// Card Footer component
-export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>((
-  { className, children, ...props },
-  ref
-) => {
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        'flex items-center p-6 pt-0',
-        className
-      )}
-      {...props}
-    >
-      {children}
-    </div>
-  );
-});
-
-CardFooter.displayName = 'CardFooter';
-
-// Create compound component with proper TypeScript typing
-type CardComponent = React.ForwardRefExoticComponent<CardProps & React.RefAttributes<HTMLDivElement>> & {
-  Header: typeof CardHeader;
-  Body: typeof CardBody;
-  Footer: typeof CardFooter;
+const headerTitleSizes: Record<NonNullable<CardHeaderProps["size"]>, string> = {
+  sm: "text-h4 text-text-primary",
+  md: "text-h3 text-text-primary",
+  lg: "text-h2 text-text-primary",
 };
 
-// Attach compound components to main Card component
-(Card as CardComponent).Header = CardHeader;
-(Card as CardComponent).Body = CardBody;
-(Card as CardComponent).Footer = CardFooter;
+export const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
+  function CardHeader(
+    { title, description, action, size = "md", className, children, ...props },
+    ref,
+  ) {
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex items-start justify-between gap-3",
+          (title || description) && "mb-4",
+          className,
+        )}
+        {...props}
+      >
+        <div className="flex-1 min-w-0">
+          {title && <div className={headerTitleSizes[size]}>{title}</div>}
+          {description && (
+            <p className="text-body-sm text-text-secondary mt-1">
+              {description}
+            </p>
+          )}
+          {children}
+        </div>
+        {action && <div className="shrink-0">{action}</div>}
+      </div>
+    );
+  },
+);
 
-// Types are already exported above
+// ─────────────────────────────────────────────────────────────
+//  CardBody — main content (no internal padding, parent handles)
+// ─────────────────────────────────────────────────────────────
+
+export const CardBody = forwardRef<
+  HTMLDivElement,
+  HTMLAttributes<HTMLDivElement>
+>(function CardBody({ className, ...props }, ref) {
+  return (
+    <div
+      ref={ref}
+      className={cn("text-body text-text-primary", className)}
+      {...props}
+    />
+  );
+});
+
+// ─────────────────────────────────────────────────────────────
+//  CardFooter — bottom area, divided from body
+// ─────────────────────────────────────────────────────────────
+
+export interface CardFooterProps extends HTMLAttributes<HTMLDivElement> {
+  /** Add top border to visually separate from body */
+  bordered?: boolean;
+  /** Justify-end (most common — actions on the right) */
+  justify?: "start" | "end" | "between" | "center";
+}
+
+const justifyClasses: Record<
+  NonNullable<CardFooterProps["justify"]>,
+  string
+> = {
+  start: "justify-start",
+  end: "justify-end",
+  between: "justify-between",
+  center: "justify-center",
+};
+
+export const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
+  function CardFooter(
+    { bordered = true, justify = "end", className, children, ...props },
+    ref,
+  ) {
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          "flex items-center gap-3",
+          justifyClasses[justify],
+          bordered && "pt-4 mt-4 border-t border-border-subtle",
+          !bordered && "mt-4",
+          className,
+        )}
+        {...props}
+      >
+        {children}
+      </div>
+    );
+  },
+);

@@ -1,15 +1,13 @@
-// app/(authenticated)/(admin)/admin/payments/new/_components/RecordPaymentForm.tsx
 "use client";
 
-import { useState, useTransition, useActionState } from "react";
+import { useState, useTransition, useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
-  CheckCircle2,
+  Sparkles,
   AlertCircle,
-  Calculator,
-  ArrowRight,
-  Wallet,
-  Loader2,
+  CheckCircle2,
+  RefreshCw,
 } from "lucide-react";
 import { PaymentMethod } from "@prisma/client";
 import {
@@ -18,37 +16,25 @@ import {
   type RecordPaymentState,
 } from "../actions";
 import type { PaymentPreview } from "@/lib/billing/getPaymentPreview";
+import VillaSelector, { type VillaOption } from "./VillaSelector";
+import MethodChips from "./MethodChips";
+import AllocationPreview from "./AllocationPreview";
+import Section from "@/components/organisms/Section";
+import Button from "@/components/atoms/Button";
+import Card from "@/components/atoms/Card";
+import { cn, formatCurrency } from "@/lib/utils/utils";
+import FormField from "@/components/atoms/FormField";
+import Input from "@/components/atoms/Input";
+import { toast } from "@/components/atoms/Toast";
 
-// ─── Helpers ──────────────────────────────────────────────
-
-const inr = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
+const initialState: RecordPaymentState = { status: "idle" };
 
 const today = () => new Date().toISOString().split("T")[0];
-
-// ─── Types ────────────────────────────────────────────────
-
-interface VillaOption {
-  villaId: string;
-  villaNo: number;
-  ownerName: string;
-  userId: string | null;
-  residentName: string | null;
-  outstanding: number;
-}
 
 interface Props {
   villas: VillaOption[];
   preselectedVillaId?: string;
 }
-
-const initialState: RecordPaymentState = { status: "idle" };
-
-// ─── Component ────────────────────────────────────────────
 
 export default function RecordPaymentForm({
   villas,
@@ -57,6 +43,7 @@ export default function RecordPaymentForm({
   const router = useRouter();
   const [state, formAction] = useActionState(recordPaymentAction, initialState);
 
+  // Form state
   const [villaId, setVillaId] = useState(preselectedVillaId ?? "");
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>(PaymentMethod.UPI);
@@ -64,351 +51,278 @@ export default function RecordPaymentForm({
   const [notes, setNotes] = useState("");
   const [paidAt, setPaidAt] = useState(today());
 
+  // Preview state (live computed)
   const [preview, setPreview] = useState<PaymentPreview | null>(null);
   const [previewing, startPreview] = useTransition();
 
   const selectedVilla = villas.find((v) => v.villaId === villaId);
-  const isSuccess = state.status === "success";
+  const numericAmount = parseFloat(amount);
+  const isReady = villaId && numericAmount > 0 && !isNaN(numericAmount);
 
-  const onPreview = () => {
-    const amt = parseFloat(amount);
-    if (!villaId || !amt || amt <= 0) {
+  // Side effect: toast on success/error
+  useEffect(() => {
+    if (state.status === "success") {
+      toast.success("Payment recorded", {
+        description: state.message,
+      });
+    } else if (state.status === "error") {
+      toast.error("Failed to record payment", {
+        description: state.message,
+      });
+    }
+  }, [state.status, state.message]);
+
+  // Debounced preview fetch on amount/villa change
+  useEffect(() => {
+    if (!isReady) {
       setPreview(null);
       return;
     }
-    startPreview(async () => {
-      const result = await previewPaymentAction(villaId, amt);
-      setPreview(result);
-    });
-  };
+
+    const handle = setTimeout(() => {
+      startPreview(async () => {
+        const result = await previewPaymentAction(villaId, numericAmount);
+        setPreview(result);
+      });
+    }, 400);
+
+    return () => clearTimeout(handle);
+  }, [villaId, numericAmount, isReady]);
 
   const fillFullOutstanding = () => {
-    if (selectedVilla) {
+    if (selectedVilla && selectedVilla.outstanding > 0) {
       setAmount(String(selectedVilla.outstanding));
-      setPreview(null);
     }
   };
 
-  // ─────────────────────────────────────────────────────────
-  // SUCCESS STATE
-  // ─────────────────────────────────────────────────────────
-  if (isSuccess && state.result) {
+  const resetForm = () => {
+    setVillaId("");
+    setAmount("");
+    setMethod(PaymentMethod.UPI);
+    setReference("");
+    setNotes("");
+    setPaidAt(today());
+    setPreview(null);
+    router.refresh();
+  };
+
+  // ─────────────────────────────────────────────────────────────
+  // SUCCESS STATE — replace form with confirmation
+  // ─────────────────────────────────────────────────────────────
+  if (state.status === "success" && state.result) {
     return (
-      <section className="bg-slate-900/30 border border-emerald-500/30 rounded-lg p-6 space-y-4">
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="w-6 h-6 text-emerald-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <h2 className="text-lg font-semibold text-emerald-200">
-              Payment recorded
-            </h2>
-            <p className="text-sm text-emerald-300/80 mt-1">{state.message}</p>
+      <Card padding="lg" className="max-w-2xl mx-auto">
+        <div className="flex flex-col items-center text-center">
+          <div className="w-14 h-14 rounded-full bg-success/15 flex items-center justify-center mb-4">
+            <CheckCircle2 className="w-7 h-7 text-success" />
+          </div>
+          <h2 className="text-h2 text-text-primary">Payment recorded</h2>
+          <p className="text-body text-text-secondary mt-2">{state.message}</p>
+
+          {/* Allocations summary */}
+          {state.result.allocations.length > 0 && (
+            <div className="w-full mt-6 p-4 rounded-md bg-bg-sunken border border-border-subtle">
+              <p className="text-body-sm text-text-muted mb-3">Allocated as</p>
+              <ul className="space-y-2 text-body-sm">
+                {state.result.allocations.map((a, i) => (
+                  <li
+                    key={i}
+                    className="flex items-center justify-between gap-3"
+                  >
+                    <span className="text-text-primary">{a.description}</span>
+                    <span className="font-mono font-medium text-text-primary shrink-0">
+                      {formatCurrency(a.amountAllocated)}
+                    </span>
+                  </li>
+                ))}
+                {state.result.unallocatedAmount > 0 && (
+                  <li className="flex items-center justify-between gap-3 pt-2 border-t border-border-subtle">
+                    <span className="text-info">Credit balance</span>
+                    <span className="font-mono font-medium text-info shrink-0">
+                      {formatCurrency(state.result.unallocatedAmount)}
+                    </span>
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          <div className="flex flex-col-reverse md:flex-row gap-2 md:gap-3 mt-6 w-full md:w-auto">
+            <Button asChild variant="ghost" size="lg">
+              <Link href={"/admin/ledger"}>Back to Master Ledger</Link>
+            </Button>
+            <Button
+              variant="primary"
+              size="lg"
+              icon={<RefreshCw className="w-4 h-4" />}
+              onClick={resetForm}
+            >
+              Record Another
+            </Button>
           </div>
         </div>
-
-        {state.result.allocations.length > 0 && (
-          <div className="bg-slate-800/40 border border-slate-700/40 rounded-md p-4">
-            <p className="text-sm text-slate-300 font-medium mb-2">
-              Allocations
-            </p>
-            <ul className="space-y-1.5 text-sm">
-              {state.result.allocations.map((a, i) => (
-                <li key={i} className="flex justify-between text-slate-300">
-                  <span>{a.description}</span>
-                  <span className="font-mono text-emerald-300">
-                    {inr(a.amountAllocated)}
-                  </span>
-                </li>
-              ))}
-              {state.result.unallocatedAmount > 0 && (
-                <li className="flex justify-between text-violet-300 pt-2 border-t border-slate-700/40">
-                  <span>Credit balance (overpayment)</span>
-                  <span className="font-mono">
-                    {inr(state.result.unallocatedAmount)}
-                  </span>
-                </li>
-              )}
-            </ul>
-          </div>
-        )}
-
-        <div className="flex gap-2 pt-2">
-          <button
-            type="button"
-            onClick={() => router.push("/admin/ledger")}
-            className="px-4 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-md text-sm font-medium"
-          >
-            Back to Master Ledger
-          </button>
-          <button
-            type="button"
-            onClick={() => router.refresh()}
-            className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-md text-sm"
-          >
-            Record Another
-          </button>
-        </div>
-      </section>
+      </Card>
     );
   }
 
-  // ─────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
   // MAIN FORM
-  // ─────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
   return (
-    <section className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-6">
-      <form action={formAction} className="space-y-5">
-        {/* ── Villa selector ── */}
-        <Field label="Villa" required>
-          <select
-            name="villaId"
-            value={villaId}
-            onChange={(e) => {
-              setVillaId(e.target.value);
-              setPreview(null);
-            }}
-            required
-            className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-500"
+    <form action={formAction}>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8">
+        {/* Left: form */}
+        <div className="md:col-span-7 space-y-6 md:space-y-8">
+          {/* Section: Villa selection */}
+          <Section
+            title="Villa"
+            description="Choose the villa receiving this payment"
+            size="sm"
           >
-            <option value="">Select villa...</option>
-            {villas.map((v) => {
-              const personLabel = v.residentName ?? v.ownerName;
-              const claimedTag = v.residentName ? "" : " [unclaimed]";
-              return (
-                <option key={v.villaId} value={v.villaId}>
-                  Villa {v.villaNo} — {personLabel}
-                  {claimedTag}
-                  {v.outstanding > 0
-                    ? ` (owes ${inr(v.outstanding)})`
-                    : " (no dues)"}
-                </option>
-              );
-            })}
-          </select>
+            <VillaSelector
+              villas={villas}
+              value={villaId}
+              onChange={setVillaId}
+              required
+            />
 
-          {selectedVilla && (
-            <div className="mt-2 flex items-center justify-between bg-slate-800/40 border border-slate-700/40 rounded-md px-3 py-2 text-sm">
-              <span className="text-slate-400">Outstanding:</span>
-              <div className="flex items-center gap-3">
-                <span
-                  className={`font-mono font-semibold ${
-                    selectedVilla.outstanding > 0
-                      ? "text-red-300"
-                      : "text-emerald-300"
-                  }`}
-                >
-                  {inr(selectedVilla.outstanding)}
-                </span>
-                {selectedVilla.outstanding > 0 && (
-                  <button
-                    type="button"
-                    onClick={fillFullOutstanding}
-                    className="text-xs px-2 py-0.5 bg-violet-600/30 text-violet-200 rounded hover:bg-violet-600/50"
+            {selectedVilla && (
+              <div className="mt-3 flex items-center justify-between p-3 rounded-md bg-bg-sunken border border-border-subtle">
+                <div>
+                  <p className="text-body-sm text-text-muted">Outstanding</p>
+                  <p
+                    className={cn(
+                      "text-h4 font-mono font-semibold",
+                      selectedVilla.outstanding > 0
+                        ? "text-danger"
+                        : "text-success",
+                    )}
                   >
-                    Use full
-                  </button>
+                    {formatCurrency(selectedVilla.outstanding)}
+                  </p>
+                </div>
+                {selectedVilla.outstanding > 0 && (
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    onClick={fillFullOutstanding}
+                  >
+                    Pay in full
+                  </Button>
                 )}
+              </div>
+            )}
+          </Section>
+
+          {/* Section: Payment details */}
+          <Section
+            title="Payment details"
+            description="Amount, method, and reference"
+            size="sm"
+          >
+            <div className="space-y-5">
+              <FormField label="Amount" required>
+                <Input
+                  type="number"
+                  name="amount"
+                  prefix="₹"
+                  placeholder="0"
+                  inputSize="lg"
+                  min="1"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  required
+                />
+              </FormField>
+
+              <FormField label="Method" required>
+                <MethodChips value={method} onChange={setMethod} />
+              </FormField>
+
+              <FormField
+                label="Reference number"
+                helperText="UPI ID, transaction ID, cheque number, etc."
+              >
+                <Input
+                  type="text"
+                  name="reference"
+                  placeholder="e.g., UPI-XYZ123"
+                  value={reference}
+                  onChange={(e) => setReference(e.target.value)}
+                />
+              </FormField>
+
+              <FormField label="Date" required>
+                <Input
+                  type="date"
+                  name="paidAt"
+                  value={paidAt}
+                  onChange={(e) => setPaidAt(e.target.value)}
+                  required
+                  max={today()}
+                />
+              </FormField>
+
+              <FormField
+                label="Notes"
+                helperText="Internal notes for this payment (optional)"
+              >
+                <Input
+                  type="text"
+                  name="notes"
+                  placeholder="Any extra context"
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                />
+              </FormField>
+            </div>
+          </Section>
+
+          {/* Error banner */}
+          {state.status === "error" && (
+            <div
+              role="alert"
+              className="flex items-start gap-3 p-4 rounded-md bg-danger-muted border border-danger-border"
+            >
+              <AlertCircle className="w-5 h-5 text-danger shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <p className="text-body font-medium text-danger">
+                  Failed to record payment
+                </p>
+                <p className="text-body-sm text-danger/90 mt-0.5">
+                  {state.message}
+                </p>
               </div>
             </div>
           )}
-        </Field>
 
-        {/* ── Amount + Method ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Amount (₹)" required>
-            <input
-              type="number"
-              name="amount"
-              min={1}
-              step="0.01"
-              value={amount}
-              onChange={(e) => {
-                setAmount(e.target.value);
-                setPreview(null);
-              }}
-              required
-              placeholder="3600"
-              className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-500"
-            />
-          </Field>
-
-          <Field label="Method" required>
-            <select
-              name="method"
-              value={method}
-              onChange={(e) => setMethod(e.target.value as PaymentMethod)}
-              required
-              className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-500"
+          {/* Submit */}
+          <div className="flex flex-col-reverse md:flex-row gap-2 md:gap-3 md:justify-end">
+            <Button asChild type="button" variant="ghost" size="lg">
+              <Link href={"/admin/ledger"}>Cancel</Link>
+            </Button>
+            <Button
+              type="submit"
+              size="lg"
+              icon={<Sparkles className="w-4 h-4" />}
+              disabled={!isReady}
             >
-              {Object.values(PaymentMethod).map((m) => (
-                <option key={m} value={m}>
-                  {m.replace("_", " ")}
-                </option>
-              ))}
-            </select>
-          </Field>
+              Record Payment
+            </Button>
+          </div>
         </div>
 
-        {/* ── Reference + Date ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Field label="Reference (optional)">
-            <input
-              type="text"
-              name="reference"
-              value={reference}
-              onChange={(e) => setReference(e.target.value)}
-              placeholder="UPI ref / cheque no"
-              className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-500"
-            />
-          </Field>
-
-          <Field label="Date" required>
-            <input
-              type="date"
-              name="paidAt"
-              value={paidAt}
-              onChange={(e) => setPaidAt(e.target.value)}
-              required
-              max={today()}
-              className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-500"
-            />
-          </Field>
-        </div>
-
-        {/* ── Notes ── */}
-        <Field label="Notes (optional)">
-          <textarea
-            name="notes"
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-            placeholder="Any additional information"
-            className="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm text-slate-200 focus:outline-none focus:border-violet-500 resize-none"
+        {/* Right: preview */}
+        <div className="md:col-span-5">
+          <AllocationPreview
+            preview={preview}
+            loading={previewing}
+            isReady={!!isReady}
           />
-        </Field>
-
-        {/* ── Preview ── */}
-        <div className="border-t border-slate-800/40 pt-5 space-y-3">
-          <div className="flex items-center justify-between">
-            <p className="text-sm font-medium text-slate-300">
-              Allocation Preview
-            </p>
-            <button
-              type="button"
-              onClick={onPreview}
-              disabled={!villaId || !amount || previewing}
-              className="flex items-center gap-2 text-xs px-3 py-1.5 bg-slate-700 hover:bg-slate-600 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-slate-200 rounded-md"
-            >
-              {previewing ? (
-                <Loader2 className="w-3 h-3 animate-spin" />
-              ) : (
-                <Calculator className="w-3 h-3" />
-              )}
-              Preview
-            </button>
-          </div>
-
-          {preview && <PreviewBox preview={preview} />}
-          {!preview && (
-            <p className="text-xs text-slate-500">
-              Click Preview to see how this payment will be allocated.
-            </p>
-          )}
         </div>
-
-        {/* ── Error ── */}
-        {state.status === "error" && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-md p-4 flex gap-3">
-            <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-            <p className="text-red-200 text-sm">{state.message}</p>
-          </div>
-        )}
-
-        {/* ── Submit ── */}
-        <div className="flex items-center gap-3 pt-2">
-          <button
-            type="submit"
-            className="px-5 py-2 bg-violet-600 hover:bg-violet-500 text-white rounded-md font-medium text-sm"
-          >
-            Record Payment
-          </button>
-          <button
-            type="button"
-            onClick={() => router.push("/admin/ledger")}
-            className="px-4 py-2 text-slate-400 hover:text-slate-200 text-sm"
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </section>
-  );
-}
-
-// ─── Sub-components ──────────────────────────────────────────
-
-function Field({
-  label,
-  required,
-  children,
-}: {
-  label: string;
-  required?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <label className="block">
-      <span className="block text-sm text-slate-300 mb-1.5">
-        {label} {required && <span className="text-red-400">*</span>}
-      </span>
-      {children}
-    </label>
-  );
-}
-
-function PreviewBox({ preview }: { preview: PaymentPreview }) {
-  if (preview.allocations.length === 0 && preview.unallocatedAmount === 0) {
-    return (
-      <div className="bg-slate-800/30 border border-slate-700/40 rounded-md p-3 text-sm text-slate-400">
-        Nothing to allocate. This villa has no outstanding bills.
       </div>
-    );
-  }
-
-  return (
-    <div className="bg-slate-800/40 border border-slate-700/40 rounded-md p-4 space-y-2">
-      <div className="flex items-center gap-2 text-sm text-slate-300 mb-2">
-        <Wallet className="w-4 h-4 text-violet-400" />
-        This payment will be allocated as:
-      </div>
-
-      <ul className="space-y-1.5 text-sm pl-6">
-        {preview.allocations.map((a, i) => (
-          <li key={i} className="flex justify-between gap-2">
-            <span className="flex items-center gap-1.5 text-slate-300">
-              <ArrowRight className="w-3 h-3 text-slate-500" />
-              {a.description}
-              {a.fullyCovered && (
-                <span className="text-xs text-emerald-400">(completes it)</span>
-              )}
-            </span>
-            <span className="font-mono text-emerald-300 whitespace-nowrap">
-              {inr(a.amountAllocated)}
-            </span>
-          </li>
-        ))}
-
-        {preview.unallocatedAmount > 0 && (
-          <li className="flex justify-between gap-2 pt-2 border-t border-slate-700/40">
-            <span className="flex items-center gap-1.5 text-violet-300">
-              <ArrowRight className="w-3 h-3" />
-              Credit balance (overpayment)
-            </span>
-            <span className="font-mono text-violet-300">
-              {inr(preview.unallocatedAmount)}
-            </span>
-          </li>
-        )}
-      </ul>
-    </div>
+    </form>
   );
 }

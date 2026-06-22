@@ -1,28 +1,37 @@
 "use client";
 
-import { useActionState, useState, useTransition } from "react";
+import { useState, useTransition, useActionState } from "react";
 import { useRouter } from "next/navigation";
-import { generateBillsAction, type GenerateBillsActionState } from "../actions";
 import {
   AlertCircle,
   CheckCircle2,
   Loader2,
   Calendar,
+  Users,
   Wallet,
+  FileCheck,
+  ChevronRight,
+  Sparkles,
 } from "lucide-react";
+import { generateBillsAction, type GenerateBillsActionState } from "../actions";
 import type { BillsPreview } from "@/lib/billing/getBillsPreview";
 
-const inr = (n: number) =>
-  new Intl.NumberFormat("en-IN", {
-    style: "currency",
-    currency: "INR",
-    maximumFractionDigits: 0,
-  }).format(n);
-
-const monthName = (m: number) =>
-  new Date(2000, m - 1, 1).toLocaleString("en-IN", { month: "long" });
-
 const initialState: GenerateBillsActionState = { status: "idle" };
+
+const MONTHS = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
 
 interface Props {
   initialMonth: number;
@@ -43,11 +52,7 @@ export default function GenerateBillsForm({
   const [month, setMonth] = useState(initialMonth);
   const [year, setYear] = useState(initialYear);
 
-  const handleSubmit = (formData: FormData) => {
-    setShowConfirm(false);
-    formAction(formData);
-  };
-
+  // Period selector → re-fetch preview via URL
   const onPeriodChange = (newMonth: number, newYear: number) => {
     setMonth(newMonth);
     setYear(newYear);
@@ -56,192 +61,347 @@ export default function GenerateBillsForm({
     startTransition(() => router.replace(url));
   };
 
+  const handleSubmit = (formData: FormData) => {
+    setShowConfirm(false);
+    formAction(formData);
+  };
+
   const canGenerate = preview.newBillsCount > 0;
+  const totalAmount = preview.totalAmount;
+
+  // Toast on success/error
+  if (state.status === "success" && state.result) {
+    toast.success("Bills generated", {
+      description: `${state.result.generatedCount} new bills created`,
+    });
+  } else if (state.status === "error") {
+    toast.error("Generation failed", {
+      description: state.message,
+    });
+  }
 
   return (
-    <section className="bg-slate-900/30 border border-slate-800/40 rounded-lg p-6 space-y-5">
-      {/* ── Period selector ── */}
-      <div className="flex flex-wrap items-center gap-3">
-        <Calendar className="w-5 h-5 text-slate-400" />
-        <label className="text-sm text-slate-300">Period:</label>
-        <select
-          value={month}
-          onChange={(e) => onPeriodChange(parseInt(e.target.value), year)}
-          disabled={isPending}
-          className="bg-slate-800 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-violet-500"
-        >
-          {Array.from({ length: 12 }, (_, i) => i + 1).map((m) => (
-            <option key={m} value={m}>
-              {monthName(m)}
-            </option>
-          ))}
-        </select>
-        <select
-          value={year}
-          onChange={(e) => onPeriodChange(month, parseInt(e.target.value))}
-          disabled={isPending}
-          className="bg-slate-800 border border-slate-700 rounded-md px-3 py-1.5 text-sm text-slate-200 focus:outline-none focus:border-violet-500"
-        >
-          {[year - 1, year, year + 1].map((y) => (
-            <option key={y} value={y}>
-              {y}
-            </option>
-          ))}
-        </select>
-        {isPending && (
-          <Loader2 className="w-4 h-4 animate-spin text-slate-500" />
-        )}
-      </div>
-
-      {/* ── Preview ── */}
-      <div className="bg-slate-800/40 border border-slate-700/40 rounded-md p-4 space-y-2">
-        <div className="flex items-center gap-2 text-slate-200 font-medium">
-          <Wallet className="w-4 h-4 text-violet-400" />
-          Preview for {monthName(month)} {year}
-        </div>
-        <ul className="text-sm text-slate-400 space-y-1 ml-6">
-          <li>
-            • Rate:{" "}
-            <span className="text-slate-200 font-mono">
-              ₹{preview.ratePerSqFt}/sqft
-            </span>
-          </li>
-          <li>
-            • Eligible villas:{" "}
-            <span className="text-slate-200">{preview.eligibleVillas}</span>
-          </li>
-          <li>
-            • Already billed:{" "}
-            <span className="text-slate-200">{preview.alreadyBilled}</span>
-          </li>
-          <li>
-            • New bills to create:{" "}
-            <span className="text-violet-300 font-semibold">
-              {preview.newBillsCount}
-            </span>
-          </li>
-          <li>
-            • Total amount:{" "}
-            <span className="text-emerald-300 font-mono font-semibold">
-              {inr(preview.totalAmount)}
-            </span>
-          </li>
-        </ul>
-      </div>
-
-      {/* ── Result message ── */}
-      {state.status === "success" && (
-        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-md p-4 flex gap-3">
-          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0 mt-0.5" />
-          <div className="flex-1">
-            <p className="text-emerald-200 font-medium">Success</p>
-            <p className="text-emerald-300/80 text-sm mt-1">{state.message}</p>
-            {state.result && state.result.totalAmount > 0 && (
-              <p className="text-emerald-300/80 text-sm mt-1">
-                Total billed:{" "}
-                <span className="font-mono">
-                  {inr(state.result.totalAmount)}
-                </span>
-              </p>
+    <div className="space-y-6 md:space-y-8">
+      {/* ─── Step 1: Period ─── */}
+      <Section
+        title="Select Period"
+        description="Choose the month and year to generate bills for"
+        icon={<Calendar />}
+      >
+        <Card padding="md">
+          <div className="flex flex-wrap items-center gap-4">
+            <PeriodSelect
+              label="Month"
+              value={month}
+              options={MONTHS.map((m, i) => ({ value: i + 1, label: m }))}
+              onChange={(v) => onPeriodChange(v, year)}
+              disabled={isPending}
+              minWidth="180px"
+            />
+            <PeriodSelect
+              label="Year"
+              value={year}
+              options={[year - 1, year, year + 1].map((y) => ({
+                value: y,
+                label: String(y),
+              }))}
+              onChange={(v) => onPeriodChange(month, v)}
+              disabled={isPending}
+              minWidth="120px"
+            />
+            {isPending && (
+              <span className="inline-flex items-center gap-1.5 text-body-sm text-text-muted ml-auto">
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Updating preview…
+              </span>
             )}
           </div>
-        </div>
-      )}
+        </Card>
+      </Section>
 
+      {/* ─── Step 2: Preview ─── */}
+      <Section
+        title="Preview"
+        description={`Bills for ${MONTHS[month - 1]} ${year}`}
+        icon={<FileCheck />}
+        badge={
+          canGenerate
+            ? { label: "Ready", variant: "success" }
+            : { label: "No changes", variant: "neutral" }
+        }
+      >
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
+          <StatCard
+            label="Eligible Villas"
+            value={preview.eligibleVillas}
+            format="number"
+            description="Billable + has area"
+            icon={<Users />}
+            accent="info"
+          />
+          <StatCard
+            label="To Generate"
+            value={preview.newBillsCount}
+            format="number"
+            description={
+              preview.alreadyBilled > 0
+                ? `${preview.alreadyBilled} already billed`
+                : "No skips"
+            }
+            icon={<FileCheck />}
+            accent={canGenerate ? "brand" : "neutral"}
+          />
+          <StatCard
+            label="Total Amount"
+            value={totalAmount}
+            format="currency-compact"
+            description={`₹${preview.ratePerSqFt}/sqft rate`}
+            icon={<Wallet />}
+            accent="success"
+          />
+          <StatCard
+            label="Already Billed"
+            value={preview.alreadyBilled}
+            format="number"
+            description="Will be skipped"
+            icon={<CheckCircle2 />}
+            accent="neutral"
+          />
+        </div>
+      </Section>
+
+      {/* ─── Result feedback (inline, persistent after action) ─── */}
+      {state.status === "success" && state.result && (
+        <SuccessBanner result={state.result} />
+      )}
       {state.status === "error" && (
-        <div className="bg-red-500/10 border border-red-500/30 rounded-md p-4 flex gap-3">
-          <AlertCircle className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-red-200 font-medium">Failed</p>
-            <p className="text-red-300/80 text-sm mt-1">{state.message}</p>
-          </div>
-        </div>
+        <ErrorBanner message={state.message ?? "Generation failed"} />
       )}
 
-      {/* ── Generate button + confirmation ── */}
-      {!showConfirm ? (
-        <button
-          type="button"
-          onClick={() => setShowConfirm(true)}
-          disabled={!canGenerate || isPending}
-          className="w-full sm:w-auto px-4 py-2 bg-violet-600 hover:bg-violet-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors"
-        >
-          {canGenerate
-            ? `Generate ${preview.newBillsCount} Bills`
-            : "Nothing to generate"}
-        </button>
-      ) : (
-        <ConfirmGenerate
-          month={month}
-          year={year}
-          preview={preview}
-          onCancel={() => setShowConfirm(false)}
-          formAction={handleSubmit}
-        />
-      )}
-    </section>
+      {/* ─── Step 3: Action ─── */}
+      <Card padding="md">
+        {!showConfirm ? (
+          <div className="flex flex-col md:flex-row md:items-center gap-3 md:gap-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-body font-medium text-text-primary">
+                {canGenerate
+                  ? `Generate ${preview.newBillsCount} bill${preview.newBillsCount === 1 ? "" : "s"} totaling ${formatCurrency(totalAmount)}`
+                  : "Nothing to generate"}
+              </p>
+              <p className="text-body-sm text-text-secondary mt-0.5">
+                {canGenerate
+                  ? `Bills will be created with ${MONTHS[month - 1]} ${year} as the period.`
+                  : `All eligible villas already have bills for ${MONTHS[month - 1]} ${year}.`}
+              </p>
+            </div>
+            <Button
+              size="lg"
+              icon={<Sparkles className="w-4 h-4" />}
+              disabled={!canGenerate}
+              onClick={() => setShowConfirm(true)}
+            >
+              Generate Bills
+            </Button>
+          </div>
+        ) : (
+          <form action={handleSubmit}>
+            <ConfirmGenerate
+              month={month}
+              year={year}
+              monthName={MONTHS[month - 1]}
+              preview={preview}
+              onCancel={() => setShowConfirm(false)}
+            />
+          </form>
+        )}
+      </Card>
+    </div>
   );
 }
 
-// ─── Confirmation step (form submits to server action) ───────
+// ─────────────────────────────────────────────────────────────
+//  Period select — clean dropdown using design tokens
+// ─────────────────────────────────────────────────────────────
+
+function PeriodSelect({
+  label,
+  value,
+  options,
+  onChange,
+  disabled,
+  minWidth,
+}: {
+  label: string;
+  value: number;
+  options: { value: number; label: string }[];
+  onChange: (value: number) => void;
+  disabled?: boolean;
+  minWidth?: string;
+}) {
+  return (
+    <label className="flex items-center gap-2.5">
+      <span className="text-body-sm text-text-secondary font-medium">
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={(e) => onChange(parseInt(e.target.value))}
+        disabled={disabled}
+        style={{ minWidth }}
+        className={cn(
+          "h-10 px-3 pr-8",
+          "rounded bg-bg-elevated",
+          "border border-border-default",
+          "text-body text-text-primary",
+          "focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary",
+          "disabled:opacity-50 disabled:cursor-not-allowed",
+          "transition-colors duration-(--duration-fast)",
+          "appearance-none cursor-pointer",
+          "bg-[url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>\")] bg-no-repeat",
+          "bg-size-[16px] bg-position-[right_8px_center]",
+        )}
+      >
+        {options.map((opt) => (
+          <option key={opt.value} value={opt.value}>
+            {opt.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Confirmation step (form submits to server action)
+// ─────────────────────────────────────────────────────────────
 
 function ConfirmGenerate({
   month,
   year,
+  monthName,
   preview,
   onCancel,
-  formAction,
 }: {
   month: number;
   year: number;
+  monthName: string;
   preview: BillsPreview;
   onCancel: () => void;
-  formAction: (formData: FormData) => void;
 }) {
   return (
-    <form
-      action={formAction}
-      className="bg-amber-500/10 border border-amber-500/30 rounded-md p-4 space-y-3"
-    >
-      <p className="text-amber-200 font-medium">Confirm generation</p>
-      <p className="text-amber-100/80 text-sm">
-        This will create <strong>{preview.newBillsCount} bills</strong> for{" "}
-        {monthName(month)} {year} totaling{" "}
-        <strong>{inr(preview.totalAmount)}</strong>.
-      </p>
-      <p className="text-amber-100/60 text-xs">
-        Already-billed villas will be skipped. This is safe to retry.
-      </p>
-
+    <div className="space-y-4">
       <input type="hidden" name="month" value={month} />
       <input type="hidden" name="year" value={year} />
 
-      <div className="flex gap-2 pt-2">
-        <SubmitButton />
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-md text-sm transition-colors"
-        >
-          Cancel
-        </button>
+      <div className="flex items-start gap-3 p-4 rounded-md bg-warning-muted border border-warning-border">
+        <AlertCircle className="w-5 h-5 text-warning shrink-0 mt-0.5" />
+        <div className="flex-1 min-w-0">
+          <p className="text-body font-medium text-warning">
+            Confirm generation
+          </p>
+          <p className="text-body-sm text-warning/90 mt-0.5">
+            This will create <strong>{preview.newBillsCount}</strong> bills for{" "}
+            <strong>
+              {monthName} {year}
+            </strong>{" "}
+            totaling <strong>{formatCurrency(preview.totalAmount)}</strong>.
+            Villas already billed will be skipped. This action is safe to retry.
+          </p>
+        </div>
       </div>
-    </form>
+
+      <div className="flex flex-col-reverse md:flex-row gap-2 md:gap-3 md:justify-end">
+        <Button type="button" variant="ghost" onClick={onCancel}>
+          Cancel
+        </Button>
+        <SubmitButton billCount={preview.newBillsCount} />
+      </div>
+    </div>
   );
 }
 
-// ─── Submit button shows pending state ───────────────────────
-
-function SubmitButton() {
-  // Native form pending state — works without useFormStatus too
+function SubmitButton({ billCount }: { billCount: number }) {
   return (
-    <button
+    <Button
       type="submit"
-      className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-md text-sm font-medium transition-colors disabled:opacity-50"
+      variant="primary"
+      icon={<Sparkles className="w-4 h-4" />}
     >
-      Yes, Generate Bills
-    </button>
+      Yes, generate {billCount} bill{billCount === 1 ? "" : "s"}
+    </Button>
   );
 }
 
-// Helper
+// ─────────────────────────────────────────────────────────────
+//  Success / error banners
+// ─────────────────────────────────────────────────────────────
+
+function SuccessBanner({
+  result,
+}: {
+  result: NonNullable<GenerateBillsActionState["result"]>;
+}) {
+  return (
+    <div
+      role="status"
+      className={cn(
+        "flex items-start gap-3 p-4 rounded-md",
+        "bg-success-muted border border-success-border",
+      )}
+    >
+      <CheckCircle2 className="w-5 h-5 text-success shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-body font-medium text-success">
+          Bills generated successfully
+        </p>
+        <p className="text-body-sm text-success/90 mt-0.5">
+          {result.generatedCount} new bill
+          {result.generatedCount === 1 ? "" : "s"} created
+          {result.skippedCount > 0 &&
+            `, ${result.skippedCount} already billed and skipped`}
+          {result.totalAmount > 0 &&
+            ` • Total: ${formatCurrency(result.totalAmount)}`}
+        </p>
+      </div>
+      <Button
+        asChild
+        variant="ghost"
+        size="sm"
+        icon={<ChevronRight className="w-4 h-4" />}
+        iconPosition="right"
+      >
+        <Link href={"/admin/ledger"}>View Master Ledger</Link>
+      </Button>
+    </div>
+  );
+}
+
+function ErrorBanner({ message }: { message: string }) {
+  return (
+    <div
+      role="alert"
+      className={cn(
+        "flex items-start gap-3 p-4 rounded-md",
+        "bg-danger-muted border border-danger-border",
+      )}
+    >
+      <AlertCircle className="w-5 h-5 text-danger shrink-0 mt-0.5" />
+      <div className="flex-1 min-w-0">
+        <p className="text-body font-medium text-danger">Generation failed</p>
+        <p className="text-body-sm text-danger/90 mt-0.5">{message}</p>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Link import (Next.js — for success banner CTA)
+// ─────────────────────────────────────────────────────────────
+
+import Link from "next/link";
+import { toast } from "@/components/atoms/Toast";
+import Section from "@/components/organisms/Section";
+import Card from "@/components/atoms/Card";
+import StatCard from "@/components/molecules/StatCard";
+import { cn, formatCurrency } from "@/lib/utils/utils";
+import Button from "@/components/atoms/Button";

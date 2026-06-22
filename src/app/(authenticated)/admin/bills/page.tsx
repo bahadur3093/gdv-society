@@ -1,8 +1,9 @@
+import { Receipt } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getBillsPreview } from "@/lib/billing/getBillsPreview";
+import PageHeader from "@/components/navigation/PageHeader";
 import GenerateBillsForm from "./_components/GenerateBillsForm";
 import RecentGenerations from "./_components/RecentGenerations";
-import { Receipt } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/auth";
 
 export const dynamic = "force-dynamic";
@@ -29,18 +30,17 @@ export default async function GenerateBillsPage({ searchParams }: PageProps) {
   ]);
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <header className="flex items-center gap-3">
-        <Receipt className="w-8 h-8 text-violet-400" />
-        <div>
-          <h1 className="text-3xl font-bold text-slate-100">
-            Generate Monthly Bills
-          </h1>
-          <p className="text-slate-400">
-            Create maintenance bills for all villas based on their sqft × rate.
-          </p>
-        </div>
-      </header>
+    <div className="space-y-6 md:space-y-8 max-w-5xl mx-auto">
+      <PageHeader
+        leading={
+          <div className="w-12 h-12 rounded-md bg-brand-primary/10 text-brand-primary flex items-center justify-center shrink-0">
+            <Receipt className="w-6 h-6" />
+          </div>
+        }
+        back={{ href: "/admin/ledger", label: "Back to Master Ledger" }}
+        title="Generate Bills"
+        description="Create monthly maintenance bills for all billable villas in one click."
+      />
 
       <GenerateBillsForm
         initialMonth={month}
@@ -53,20 +53,28 @@ export default async function GenerateBillsPage({ searchParams }: PageProps) {
   );
 }
 
-// ─── Helper: aggregate recent bill generations ───────────────
+// ─────────────────────────────────────────────────────────────
+//  Helper — aggregate recent bill generations
+// ─────────────────────────────────────────────────────────────
 
 async function getRecentGenerations() {
   const bills = await prisma.maintenanceBill.findMany({
     select: { month: true, year: true, amount: true, createdAt: true },
     orderBy: { createdAt: "desc" },
-    take: 500, // recent enough
+    take: 500,
   });
 
-  // Group by month/year
   const map = new Map<
     string,
-    { month: number; year: number; count: number; total: number; latest: Date }
+    {
+      month: number;
+      year: number;
+      count: number;
+      total: number;
+      latest: Date;
+    }
   >();
+
   for (const b of bills) {
     const key = `${b.year}-${b.month}`;
     const existing = map.get(key);

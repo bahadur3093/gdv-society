@@ -1,30 +1,47 @@
-import { getMasterLedger } from '@/lib/billing/getMasterLedger';
-import MasterSummary from './_components/MasterSummary';
-import ResidentsTable from './_components/ResidentsTable';
-import { requireAdmin } from '@/lib/auth/auth';
+import { Plus } from "lucide-react";
+import Link from "next/link";
 
-export const dynamic = 'force-dynamic';
+import { getMasterLedger } from "@/lib/billing/getMasterLedger";
+import PageHeader from "@/components/navigation/PageHeader";
+import { requireAdmin } from "@/lib/auth/auth";
+import Button from "@/components/atoms/Button";
+import MasterLedgerView from "./_components/MasterLedgerView";
+
+export const dynamic = "force-dynamic";
 
 export const metadata = {
-  title: 'Master Ledger — Admin',
+  title: "Master Ledger — Admin",
 };
 
 export default async function AdminMasterLedgerPage() {
-  const admin = await requireAdmin();
+  await requireAdmin();
   const data = await getMasterLedger();
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-slate-100">Master Ledger</h1>
-        <p className="text-sm text-slate-400 mt-1">
-          Welcome, {admin.name} • Rate: ₹{data.ratePerSqFt}/sqft •{' '}
-          {data.summary.totalVillas} villas • {data.summary.claimedVillas} claimed
-        </p>
-      </header>
+    <div className="space-y-6 md:space-y-8">
+      {/* ─── Page Header ─── */}
+      <PageHeader
+        title="Master Ledger"
+        description={
+          <>
+            {data.summary.totalVillas} villas • {data.summary.billableVillas}{" "}
+            billable • {data.summary.claimedVillas} claimed • Rate: ₹
+            {data.ratePerSqFt}/sqft
+          </>
+        }
+        actions={
+          <Button asChild icon={<Plus className="w-4 h-4" />}>
+            <Link href={"/admin/bills"}>Generate Bills</Link>
+          </Button>
+        }
+      />
 
-      <MasterSummary summary={data.summary} />
-      <ResidentsTable rows={data.rows} />
+      {/* ─── Main client view (stats + table) ─── */}
+      <MasterLedgerView
+        rows={data.rows}
+        summary={data.summary}
+        ratePerSqFt={data.ratePerSqFt}
+      />
     </div>
   );
 }

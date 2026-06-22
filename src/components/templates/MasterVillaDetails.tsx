@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { formatCurrency, formatArea } from '@/utils';
 import { Table, Edit2, Save, X, ArrowUpDown, Loader2 } from 'lucide-react';
 import ConfirmDialog from '@/components/molecules/ConfirmDialog';
-import Toast from '@/components/atoms/Toast';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { fetchVillas, updateVilla, selectAllVillas, selectVillasLoading, selectVillasError } from '@/store/slices/villasSlice';
 
@@ -422,13 +421,13 @@ export default function MasterVillaDetails() {
       />
       
       {/* Toast Notification */}
-      <Toast
+      {/* <Toast
         message={toast.message}
         variant={toast.variant}
         isVisible={toast.isVisible}
         onClose={() => setToast({ ...toast, isVisible: false })}
         duration={3000}
-      />
+      /> */}
     </div>
     </>
   );

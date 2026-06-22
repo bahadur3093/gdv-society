@@ -1,254 +1,167 @@
-import React, { forwardRef } from 'react';
-import { cn } from '@/utils/classNames';
+import { forwardRef, type HTMLAttributes, type ReactNode } from "react";
+import { X } from "lucide-react";
+import { cn } from "@/lib/utils/utils";
 
-// Badge variant and size types
-export type BadgeVariant = 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-export type BadgeSize = 'sm' | 'md' | 'lg';
-export type BadgeShape = 'rounded' | 'pill';
+export type BadgeVariant =
+  | "neutral"
+  | "success"
+  | "warning"
+  | "danger"
+  | "info"
+  | "brand";
 
-// Badge component props interface
-export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  /** Badge variant determines the color scheme */
+export type BadgeSize = "sm" | "md" | "lg";
+
+export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
   variant?: BadgeVariant;
-  /** Badge size */
   size?: BadgeSize;
-  /** Badge shape */
-  shape?: BadgeShape;
-  /** Whether the badge can be removed */
+  /** Show a colored dot prefix (good for status) */
+  dot?: boolean;
+  /** Leading icon */
+  icon?: ReactNode;
+  /** Show outlined style instead of filled */
+  outline?: boolean;
+  /** Show X button — fires onRemove when clicked */
   removable?: boolean;
-  /** Icon element to display */
-  icon?: React.ReactNode;
-  /** Position of the icon relative to text */
-  iconPosition?: 'leading' | 'trailing';
-  /** Custom className for additional styling */
-  className?: string;
-  /** Badge content */
-  children?: React.ReactNode;
-  /** Remove handler for removable badges */
-  onRemove?: (event: React.MouseEvent<HTMLButtonElement>) => void;
-  /** ARIA label for accessibility */
-  'aria-label'?: string;
+  onRemove?: () => void;
 }
 
-// Variant styles mapping
-const variantStyles: Record<BadgeVariant, string> = {
-  default: [
-    'bg-surface text-text-main border border-border',
-    'hover:bg-surface/80'
-  ].join(' '),
-  
-  primary: [
-    'bg-brand-primary text-white',
-    'hover:bg-brand-primary/90'
-  ].join(' '),
-  
-  secondary: [
-    'bg-brand-secondary text-white',
-    'hover:bg-brand-secondary/90'
-  ].join(' '),
-  
-  success: [
-    'bg-green-100 text-green-800 border border-green-200',
-    'hover:bg-green-200'
-  ].join(' '),
-  
-  warning: [
-    'bg-yellow-100 text-yellow-800 border border-yellow-200',
-    'hover:bg-yellow-200'
-  ].join(' '),
-  
-  error: [
-    'bg-red-100 text-red-800 border border-red-200',
-    'hover:bg-red-200'
-  ].join(' '),
-  
-  info: [
-    'bg-blue-100 text-blue-800 border border-blue-200',
-    'hover:bg-blue-200'
-  ].join(' ')
+// Filled variants — colored background with semantic colors
+const filledVariantClasses: Record<BadgeVariant, string> = {
+  neutral: "bg-bg-sunken text-text-secondary border border-border-default",
+  success: "bg-success-muted text-success border border-success-border",
+  warning: "bg-warning-muted text-warning border border-warning-border",
+  danger: "bg-danger-muted text-danger border border-danger-border",
+  info: "bg-info-muted text-info border border-info-border",
+  brand:
+    "bg-brand-primary/15 text-brand-primary border border-brand-primary/30",
 };
 
-// Size styles mapping
-const sizeStyles: Record<BadgeSize, string> = {
-  sm: 'px-2 py-0.5 text-xs font-medium min-h-[20px]',
-  md: 'px-2.5 py-1 text-xs font-medium min-h-[24px]',
-  lg: 'px-3 py-1.5 text-sm font-medium min-h-[28px]'
+// Outline variants — no background, just colored border + text
+const outlineVariantClasses: Record<BadgeVariant, string> = {
+  neutral: "bg-transparent text-text-secondary border border-border-default",
+  success: "bg-transparent text-success border border-success-border",
+  warning: "bg-transparent text-warning border border-warning-border",
+  danger: "bg-transparent text-danger border border-danger-border",
+  info: "bg-transparent text-info border border-info-border",
+  brand: "bg-transparent text-brand-primary border border-brand-primary/30",
 };
 
-// Shape styles mapping
-const shapeStyles: Record<BadgeShape, string> = {
-  rounded: 'rounded-md',
-  pill: 'rounded-full'
+// Dot color (for dot prefix)
+const dotColorClasses: Record<BadgeVariant, string> = {
+  neutral: "bg-text-muted",
+  success: "bg-success",
+  warning: "bg-warning",
+  danger: "bg-danger",
+  info: "bg-info",
+  brand: "bg-brand-primary",
 };
 
-// Icon size mapping based on badge size
-const iconSizes: Record<BadgeSize, string> = {
-  sm: 'w-3 h-3',
-  md: 'w-3.5 h-3.5',
-  lg: 'w-4 h-4'
+const sizeClasses: Record<BadgeSize, string> = {
+  sm: "h-5 px-2 text-micro gap-1",
+  md: "h-6 px-2.5 text-body-sm gap-1.5",
+  lg: "h-7 px-3 text-body gap-2",
 };
 
-// Remove button styles
-const removeButtonStyles = {
-  sm: 'w-3 h-3 ml-1',
-  md: 'w-3.5 h-3.5 ml-1.5',
-  lg: 'w-4 h-4 ml-2'
+const iconSizeClasses: Record<BadgeSize, string> = {
+  sm: "w-3 h-3",
+  md: "w-3.5 h-3.5",
+  lg: "w-4 h-4",
 };
 
-// Remove icon component
-const RemoveIcon: React.FC<{ size: BadgeSize }> = ({ size }) => {
-  return (
-    <svg
-      className={cn('stroke-current', iconSizes[size])}
-      xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 20 20"
-      fill="none"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden="true"
-    >
-      <path d="M6 6l8 8M6 14l8-8" />
-    </svg>
-  );
+const dotSizeClasses: Record<BadgeSize, string> = {
+  sm: "w-1.5 h-1.5",
+  md: "w-2 h-2",
+  lg: "w-2.5 h-2.5",
 };
 
-/**
- * Badge component - A flexible badge/tag component for labeling and categorization
- * 
- * Features:
- * - Multiple variants with semantic colors (default, primary, secondary, success, warning, error, info)
- * - Configurable sizes (sm, md, lg)
- * - Shape options (rounded, pill)
- * - Icon support with flexible positioning
- * - Removable functionality with close button
- * - Full accessibility support with proper ARIA attributes
- * - Keyboard navigation for removable badges
- * 
- * @example
- * ```tsx
- * <Badge variant="primary" size="md">
- *   New
- * </Badge>
- * 
- * <Badge variant="success" icon={<Icon name="check" />} iconPosition="leading">
- *   Completed
- * </Badge>
- * 
- * <Badge variant="warning" removable onRemove={handleRemove}>
- *   Removable Tag
- * </Badge>
- * ```
- */
-export const Badge = forwardRef<HTMLSpanElement, BadgeProps>((
+const Badge = forwardRef<HTMLSpanElement, BadgeProps>(function Badge(
   {
-    variant = 'default',
-    size = 'md',
-    shape = 'rounded',
-    removable = false,
+    variant = "neutral",
+    size = "md",
+    dot = false,
     icon,
-    iconPosition = 'leading',
+    outline = false,
+    removable = false,
+    onRemove,
     className,
     children,
-    onRemove,
-    'aria-label': ariaLabel,
     ...props
   },
-  ref
-) => {
-  // Handle remove button click
-  const handleRemoveClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.stopPropagation();
-    onRemove?.(event);
-  };
-
-  // Handle remove button keyboard events
-  const handleRemoveKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      event.preventDefault();
-      event.stopPropagation();
-      onRemove?.(event as any);
-    }
-  };
-
-  // Combine all styles
-  const badgeClasses = cn(
-    // Base styles
-    'inline-flex items-center justify-center gap-1 font-medium transition-colors duration-200',
-    'focus-within:outline-none focus-within:ring-2 focus-within:ring-brand-primary/50 focus-within:ring-offset-2 focus-within:ring-offset-background',
-    
-    // Variant styles
-    variantStyles[variant],
-    
-    // Size styles
-    sizeStyles[size],
-    
-    // Shape styles
-    shapeStyles[shape],
-    
-    // Custom className
-    className
-  );
-
-  // Render icon with appropriate styling
-  const renderIcon = (iconElement: React.ReactNode, position: 'leading' | 'trailing') => {
-    if (!iconElement) return null;
-    
-    return (
-      <span 
-        className={cn(
-          'flex items-center justify-center',
-          iconSizes[size]
-        )}
-        aria-hidden="true"
-      >
-        {iconElement}
-      </span>
-    );
-  };
+  ref,
+) {
+  const variantStyles = outline
+    ? outlineVariantClasses[variant]
+    : filledVariantClasses[variant];
 
   return (
     <span
       ref={ref}
-      className={badgeClasses}
-      aria-label={ariaLabel}
+      className={cn(
+        // Layout
+        "inline-flex items-center justify-center shrink-0",
+        "font-medium whitespace-nowrap",
+        // Shape
+        "rounded-full",
+        // Size
+        sizeClasses[size],
+        // Variant
+        variantStyles,
+        className,
+      )}
       {...props}
     >
+      {/* Dot prefix */}
+      {dot && (
+        <span
+          aria-hidden="true"
+          className={cn(
+            "rounded-full shrink-0",
+            dotSizeClasses[size],
+            dotColorClasses[variant],
+          )}
+        />
+      )}
+
       {/* Leading icon */}
-      {icon && iconPosition === 'leading' && renderIcon(icon, 'leading')}
-      
-      {/* Badge text */}
-      {children && (
-        <span className="truncate">
-          {children}
+      {icon && !dot && (
+        <span
+          className={cn(
+            "shrink-0 inline-flex items-center",
+            iconSizeClasses[size],
+          )}
+        >
+          {icon}
         </span>
       )}
-      
-      {/* Trailing icon */}
-      {icon && iconPosition === 'trailing' && renderIcon(icon, 'trailing')}
-      
+
+      {/* Label */}
+      {children}
+
       {/* Remove button */}
-      {removable && (
+      {removable && onRemove && (
         <button
           type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
           className={cn(
-            'inline-flex items-center justify-center rounded-full',
-            'hover:bg-black/10 focus:bg-black/10 focus:outline-none',
-            'transition-colors duration-200',
-            removeButtonStyles[size]
+            "shrink-0 inline-flex items-center justify-center",
+            "rounded-full",
+            "hover:bg-current/20",
+            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-current",
+            "transition-colors duration-[var(--duration-fast)]",
+            // Match icon size
+            iconSizeClasses[size],
           )}
-          onClick={handleRemoveClick}
-          onKeyDown={handleRemoveKeyDown}
-          aria-label={`Remove ${children || 'badge'}`}
-          tabIndex={0}
+          aria-label="Remove"
         >
-          <RemoveIcon size={size} />
+          <X className="w-full h-full" />
         </button>
       )}
     </span>
   );
 });
 
-Badge.displayName = 'Badge';
-
-// Types are already exported above
+export default Badge;

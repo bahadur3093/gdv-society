@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { requireAdmin, requireAuth } from "@/lib/auth/auth-helpers";
 import { z } from "zod";
-import { ApiResponse, HttpStatus } from "@/types";
+import { HttpStatus } from "@/types";
+import { requireAdmin } from "@/lib/auth/auth";
 
 // Validation schema for creating a new announcement
 const createAnnouncementSchema = z.object({

@@ -1,143 +1,378 @@
 @import "tailwindcss";
 
-/* JSONEditor Custom Styles */
-.jsoneditor-wrapper {
-  width: 100%;
+@theme {
+  --font-sans: var(--font-inter), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains-mono), "SF Mono", Menlo, monospace;
+
+  --text-display-1: 3rem; /* 48px hero numbers */
+  --text-display-1--line-height: 3.5rem;
+  --text-display-1--letter-spacing: -0.02em;
+  --text-display-1--font-weight: 700;
+
+  --text-display-2: 2.25rem; /* 36px mobile titles */
+  --text-display-2--line-height: 2.75rem;
+  --text-display-2--letter-spacing: -0.02em;
+  --text-display-2--font-weight: 700;
+
+  --text-h1: 1.875rem; /* 30px */
+  --text-h1--line-height: 2.375rem;
+  --text-h1--letter-spacing: -0.01em;
+  --text-h1--font-weight: 700;
+
+  --text-h2: 1.5rem; /* 24px */
+  --text-h2--line-height: 2rem;
+  --text-h2--letter-spacing: -0.01em;
+  --text-h2--font-weight: 600;
+
+  --text-h3: 1.25rem; /* 20px */
+  --text-h3--line-height: 1.75rem;
+  --text-h3--font-weight: 600;
+
+  --text-h4: 1.125rem; /* 18px */
+  --text-h4--line-height: 1.625rem;
+  --text-h4--font-weight: 600;
+
+  --text-body-lg: 1.0625rem; /* 17px - resident default */
+  --text-body-lg--line-height: 1.625rem;
+
+  --text-body: 0.9375rem; /* 15px - admin default */
+  --text-body--line-height: 1.375rem;
+
+  --text-body-sm: 0.8125rem; /* 13px - captions */
+  --text-body-sm--line-height: 1.125rem;
+
+  --text-micro: 0.6875rem; /* 11px - labels */
+  --text-micro--line-height: 0.875rem;
+  --text-micro--letter-spacing: 0.05em;
+  --text-micro--font-weight: 500;
+
+  /* ───────────────────────────────────────────────────────────
+     RADIUS
+     ─────────────────────────────────────────────────────────── */
+  --radius-sm: 0.375rem; /* 6px badges */
+  --radius: 0.625rem; /* 10px default */
+  --radius-md: 0.75rem; /* 12px cards */
+  --radius-lg: 1rem; /* 16px hero */
+  --radius-xl: 1.5rem; /* 24px big hero */
+  --radius-full: 9999px; /* pills */
+
+  /* ───────────────────────────────────────────────────────────
+     BREAKPOINTS
+     ─────────────────────────────────────────────────────────── */
+  --breakpoint-xs: 380px;
+  --breakpoint-sm: 640px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
+  --breakpoint-xl: 1280px;
+  --breakpoint-2xl: 1536px;
+
+  /* ───────────────────────────────────────────────────────────
+     COLORS — defined as direct hex/rgb so Tailwind generates
+     utilities like bg-bg-elevated, text-text-primary, etc.
+     These are LIGHT MODE values. Dark mode overrides below.
+     ─────────────────────────────────────────────────────────── */
+
+  /* Brand (same in both themes — luminous values work everywhere) */
+  --color-brand-blue: #4f8aff;
+  --color-brand-violet: #8b5cf6;
+  --color-brand-pink: #ec4899;
+  --color-brand-primary: #8b5cf6;
+  --color-brand-primary-hover: #7c3aed;
+  --color-brand-primary-fg: #ffffff;
+
+  /* Surfaces — LIGHT */
+  --color-bg-base: #fafafa;
+  --color-bg-elevated: #ffffff;
+  --color-bg-sunken: #f4f4f5;
+  --color-bg-overlay: #ffffff;
+
+  /* Material 3 aliases — same colors, M3 names (for Stitch compat) */
+  --color-surface: #fafafa;
+  --color-surface-dim: #f4f4f5;
+  --color-surface-bright: #ffffff;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #f9f9fa;
+  --color-surface-container: #f4f4f5;
+  --color-surface-container-high: #ececee;
+  --color-surface-container-highest: #e4e4e7;
+
+  /* Borders — LIGHT */
+  --color-border-subtle: rgba(0, 0, 0, 0.06);
+  --color-border-default: rgba(0, 0, 0, 0.1);
+  --color-border-strong: rgba(0, 0, 0, 0.16);
+  --color-outline: #71717a;
+  --color-outline-variant: #d4d4d8;
+
+  /* Text — LIGHT */
+  --color-text-primary: #18181b;
+  --color-text-secondary: #52525b;
+  --color-text-muted: #71717a;
+  --color-text-disabled: #a1a1aa;
+  --color-text-inverse: #fafafa;
+
+  /* M3 text aliases */
+  --color-on-surface: #18181b;
+  --color-on-surface-variant: #52525b;
+  --color-inverse-surface: #18181b;
+  --color-inverse-on-surface: #f5f5f7;
+
+  /* Semantic — same hues both themes, alphas tuned per surface */
+  --color-success: #10b981;
+  --color-success-fg: #ffffff;
+  --color-success-muted: rgba(16, 185, 129, 0.12);
+  --color-success-border: rgba(16, 185, 129, 0.3);
+
+  --color-warning: #f59e0b;
+  --color-warning-fg: #18181b;
+  --color-warning-muted: rgba(245, 158, 11, 0.12);
+  --color-warning-border: rgba(245, 158, 11, 0.3);
+
+  --color-danger: #ef4444;
+  --color-danger-fg: #ffffff;
+  --color-danger-muted: rgba(239, 68, 68, 0.12);
+  --color-danger-border: rgba(239, 68, 68, 0.3);
+
+  --color-info: #0ea5e9;
+  --color-info-fg: #ffffff;
+  --color-info-muted: rgba(14, 165, 233, 0.12);
+  --color-info-border: rgba(14, 165, 233, 0.3);
+
+  /* ───────────────────────────────────────────────────────────
+     ANIMATION
+     ─────────────────────────────────────────────────────────── */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  --duration-fast: 120ms;
+  --duration: 200ms;
+  --duration-slow: 320ms;
+  --duration-page: 400ms;
+
+  --animate-fade-in: fade-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-slide-up: slide-up 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-slide-down: slide-down 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-scale-in: scale-in 200ms cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-pulse-soft: pulse-soft 2s ease-in-out infinite;
+  --animate-shimmer: shimmer 1.5s linear infinite;
 }
 
-.jsoneditor-wrapper .jsoneditor {
-  border: 0;
+/* ═══════════════════════════════════════════════════════════════
+   DARK MODE — override tokens when [data-theme="dark"] on <html>
+   In Tailwind v4, register dark variant separately
+   ═══════════════════════════════════════════════════════════════ */
+
+@custom-variant dark ([data-theme="dark"] &);
+
+:root[data-theme="dark"] {
+  /* Surfaces — DARK */
+  --color-bg-base: #0a0a0c;
+  --color-bg-elevated: #14141a;
+  --color-bg-sunken: #1c1c26;
+  --color-bg-overlay: #14141a;
+
+  /* M3 aliases (from your Stitch tokens) */
+  --color-surface: #131315;
+  --color-surface-dim: #131315;
+  --color-surface-bright: #39393b;
+  --color-surface-container-lowest: #0e0e10;
+  --color-surface-container-low: #1c1b1d;
+  --color-surface-container: #201f21;
+  --color-surface-container-high: #2a2a2c;
+  --color-surface-container-highest: #353437;
+
+  /* Borders — DARK */
+  --color-border-subtle: rgba(255, 255, 255, 0.06);
+  --color-border-default: rgba(255, 255, 255, 0.1);
+  --color-border-strong: rgba(255, 255, 255, 0.16);
+  --color-outline: #958ea0;
+  --color-outline-variant: #494454;
+
+  /* Text — DARK */
+  --color-text-primary: #f5f5f7;
+  --color-text-secondary: #a1a1aa;
+  --color-text-muted: #71717a;
+  --color-text-disabled: #52525b;
+  --color-text-inverse: #18181b;
+
+  /* M3 text aliases */
+  --color-on-surface: #e5e1e4;
+  --color-on-surface-variant: #cbc3d7;
+  --color-inverse-surface: #e5e1e4;
+  --color-inverse-on-surface: #313032;
 }
 
-.jsoneditor-wrapper .jsoneditor-menu {
-  background-color: rgb(30 41 59);
-  border-bottom: 1px solid rgb(51 65 85);
+/* ═══════════════════════════════════════════════════════════════
+   GRADIENTS (CSS custom properties — used via bg-[image:var(...)])
+   ═══════════════════════════════════════════════════════════════ */
+
+:root {
+  --gradient-brand: linear-gradient(
+    135deg,
+    var(--color-brand-blue) 0%,
+    var(--color-brand-violet) 50%,
+    var(--color-brand-pink) 100%
+  );
+
+  --gradient-brand-soft: linear-gradient(
+    135deg,
+    rgba(79, 138, 255, 0.15) 0%,
+    rgba(139, 92, 246, 0.15) 50%,
+    rgba(236, 72, 153, 0.15) 100%
+  );
+
+  --gradient-aurora:
+    radial-gradient(
+      ellipse 80% 60% at 30% 20%,
+      rgba(139, 92, 246, 0.2) 0%,
+      transparent 60%
+    ),
+    radial-gradient(
+      ellipse 70% 60% at 80% 80%,
+      rgba(236, 72, 153, 0.15) 0%,
+      transparent 60%
+    );
+
+  /* Shadows — light mode */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-sm: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.04);
+  --shadow-md:
+    0 4px 12px -2px rgb(0 0 0 / 0.06), 0 2px 4px -2px rgb(0 0 0 / 0.04);
+  --shadow-lg:
+    0 12px 24px -6px rgb(0 0 0 / 0.08), 0 4px 8px -4px rgb(0 0 0 / 0.04);
+  --shadow-xl: 0 24px 48px -12px rgb(0 0 0 / 0.12);
+
+  /* Safe area insets */
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
 }
 
-.jsoneditor-wrapper .jsoneditor-menu > button,
-.jsoneditor-wrapper .jsoneditor-menu > .jsoneditor-modes > button {
-  background-color: rgb(51 65 85);
-  color: rgb(226 232 240);
-  border-color: rgb(71 85 105);
+:root[data-theme="dark"] {
+  /* Shadows — dark mode (deeper + glow rim) */
+  --shadow-xs: 0 1px 2px 0 rgb(0 0 0 / 0.4);
+  --shadow-sm: 0 2px 4px 0 rgb(0 0 0 / 0.3), 0 1px 2px -1px rgb(0 0 0 / 0.2);
+  --shadow-md:
+    0 4px 16px -2px rgb(0 0 0 / 0.4), 0 0 0 1px rgb(255 255 255 / 0.04);
+  --shadow-lg:
+    0 16px 32px -8px rgb(0 0 0 / 0.5), 0 0 0 1px rgb(255 255 255 / 0.06);
+  --shadow-xl: 0 32px 64px -16px rgb(0 0 0 / 0.6);
 }
 
-.jsoneditor-wrapper .jsoneditor-menu > button:hover,
-.jsoneditor-wrapper .jsoneditor-menu > .jsoneditor-modes > button:hover {
-  background-color: rgb(71 85 105);
-}
+/* ═══════════════════════════════════════════════════════════════
+   KEYFRAMES
+   ═══════════════════════════════════════════════════════════════ */
 
-.jsoneditor-wrapper .jsoneditor-tree,
-.jsoneditor-wrapper .jsoneditor-text {
-  background-color: rgb(15 23 42);
-  color: rgb(241 245 249);
-}
-
-.jsoneditor-wrapper .jsoneditor-field,
-.jsoneditor-wrapper .jsoneditor-value {
-  color: rgb(241 245 249);
-}
-
-.jsoneditor-wrapper .jsoneditor-string {
-  color: rgb(74 222 128);
-}
-
-.jsoneditor-wrapper .jsoneditor-number {
-  color: rgb(96 165 250);
-}
-
-.jsoneditor-wrapper .jsoneditor-boolean {
-  color: rgb(192 132 252);
-}
-
-.jsoneditor-wrapper .jsoneditor-null {
-  color: rgb(248 113 113);
-}
-
-.jsoneditor-wrapper .jsoneditor-tree button.jsoneditor-button {
-  background-color: rgb(51 65 85);
-}
-
-.jsoneditor-wrapper .jsoneditor-search input {
-  background-color: rgb(30 41 59);
-  color: rgb(241 245 249);
-  border-color: rgb(51 65 85);
-}
-
-.jsoneditor-wrapper .jsoneditor-statusbar {
-  background-color: rgb(30 41 59);
-  border-top: 1px solid rgb(51 65 85);
-  color: rgb(148 163 184);
-}
-
-.jsoneditor-wrapper .ace_editor {
-  background-color: rgb(15 23 42);
-}
-
-.jsoneditor-wrapper .ace_gutter {
-  background-color: rgb(30 41 59);
-  color: rgb(148 163 184);
-}
-
-.jsoneditor-wrapper .ace_content {
-  background-color: rgb(15 23 42);
-}
-
-/* Material Design / Android-style Custom Scrollbar */
-.custom-scrollbar {
-  scrollbar-width: thin;
-  scrollbar-color: transparent transparent;
-  scroll-behavior: smooth;
-}
-
-/* Show scrollbar on hover - Material Design style */
-.custom-scrollbar:hover {
-  scrollbar-color: rgba(0, 0, 0, 0.3) transparent;
-}
-
-/* WebKit browsers (Chrome, Safari, Edge) */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: transparent;
-  border-radius: 8px;
-  transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-/* Show scrollbar thumb on hover - Material Design elevation */
-.custom-scrollbar:hover::-webkit-scrollbar-thumb {
-  background: rgba(0, 0, 0, 0.3);
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 0, 0, 0.5);
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:active {
-  background: rgba(0, 0, 0, 0.6);
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-  .custom-scrollbar:hover {
-    scrollbar-color: rgba(255, 255, 255, 0.3) transparent;
+@keyframes fade-in {
+  from {
+    opacity: 0;
   }
-  
-  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-    background: rgba(255, 255, 255, 0.3);
+  to {
+    opacity: 1;
   }
-  
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(255, 255, 255, 0.5);
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
   }
-  
-  .custom-scrollbar::-webkit-scrollbar-thumb:active {
-    background: rgba(255, 255, 255, 0.6);
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
+}
+
+@keyframes slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse-soft {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   BASE STYLES
+   ═══════════════════════════════════════════════════════════════ */
+
+html {
+  /* Smooth color transitions when theme switches */
+  transition: color-scheme 200ms ease;
+  color-scheme: light;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-bg-base);
+  color: var(--color-text-primary);
+  font-family: var(--font-sans);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Mono font with tabular numbers (for financial data) */
+.font-mono {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus styles — visible on keyboard nav, hidden on mouse */
+*:focus {
+  outline: none;
+}
+
+/* Reduced motion */
+
+
+/* Vaul drawer styles — prevents background scroll + smooths body */
+[vaul-drawer] {
+  touch-action: none;
+}
+
+[vaul-drawer][data-state="open"]::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: inherit;
+  height: 200%;
 }

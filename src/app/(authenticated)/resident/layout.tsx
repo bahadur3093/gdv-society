@@ -1,19 +1,21 @@
-import { auth } from "@/lib/auth/auth";
-import { redirect } from "next/navigation";
+import { requireResident } from "@/lib/auth/auth";
 import ResidentShell from "./ResidentShell";
+import prisma from "@/lib/prisma";
 
-export default async function AdminLayout({
+export default async function ResidentLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
+  const user = await requireResident();
+  const villa = await prisma.villa.findUnique({
+    where: { userId: user.id },
+    select: { villaNo: true },
+  });
 
-  if (!session?.user) redirect("/auth/signin");
-
-  if (session.user.role !== "RESIDENT") {
-    redirect("/admin");
-  }
-
-  return <ResidentShell>{children}</ResidentShell>;
+  return (
+    <ResidentShell userName={user.name} villaNo={villa?.villaNo ?? null}>
+      {children}
+    </ResidentShell>
+  );
 }
