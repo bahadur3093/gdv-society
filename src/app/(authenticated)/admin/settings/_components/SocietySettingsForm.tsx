@@ -55,7 +55,7 @@ export default function SocietySettingsForm({ initialValues }: Props) {
     } else if (state.status === 'error') {
       toast.error(state.message ?? 'Failed to save settings');
     }
-  }, [state.status, state.message, router]);
+  }, [state, router]);
 
   // Discard handler
   const handleDiscard = () => {
