@@ -114,7 +114,7 @@ export default function PayRequestForm({
     } else if (state.status === "error") {
       toast.error("Submission failed", { description: state.message });
     }
-  }, [state.status, state.message]);
+  }, [state]);
 
   // ─── Success state — replaces form ───
   if (state.status === "success") {

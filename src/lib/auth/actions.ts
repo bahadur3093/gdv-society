@@ -1,11 +1,12 @@
 "use server";
 
-import { signIn } from "@/lib/auth/auth";
+import { signIn, signOut } from "@/lib/auth/auth";
 import { AuthError } from "next-auth";
+import { redirect } from "next/navigation";
 
 export async function signInWithCredentials(
   email: string,
-  password: string
+  password: string,
 ): Promise<{ ok: boolean; error?: string }> {
   try {
     await signIn("credentials", {
@@ -25,4 +26,9 @@ export async function signInWithCredentials(
     }
     throw error; // rethrow non-auth errors (Next.js redirect, etc.)
   }
+}
+
+export async function signOutAction(): Promise<void> {
+  await signOut({ redirect: false });
+  redirect("/auth/signin");
 }

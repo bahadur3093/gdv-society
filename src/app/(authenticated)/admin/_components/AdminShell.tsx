@@ -21,7 +21,8 @@ import IconButton from "@/components/atoms/IconButton";
 import Input from "@/components/atoms/Input";
 import { cn } from "@/lib/utils/utils";
 import Avatar from "@/components/atoms/Avatar";
-import { buildAdminNav } from "./_components/adminNav";
+import { buildAdminNav } from "./adminNav";
+import UserMenu from "@/components/navigation/UserMenu";
 
 interface AdminShellProps {
   userName: string;
@@ -129,18 +130,13 @@ export default function AdminShell({
                 onClick={toggle}
                 showTooltip
               />
-              <button
-                type="button"
-                aria-label="Profile"
-                className={cn(
-                  "hidden md:flex items-center justify-center rounded-full",
-                  "focus-visible:outline-none focus-visible:ring-2",
-                  "focus-visible:ring-brand-primary focus-visible:ring-offset-2",
-                  "focus-visible:ring-offset-bg-base",
-                )}
-              >
-                <Avatar size="md" name={userName} ring="subtle" />
-              </button>
+              <UserMenu
+                name={userName}
+                email={userEmail}
+                role="ADMIN"
+                profileHref="/admin/profile"
+                avatarSize="md"
+              />
             </>
           }
           glassOnScroll

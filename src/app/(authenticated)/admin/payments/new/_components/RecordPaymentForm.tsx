@@ -70,7 +70,7 @@ export default function RecordPaymentForm({
         description: state.message,
       });
     }
-  }, [state.status, state.message]);
+  }, [state]);
 
   // Debounced preview fetch on amount/villa change
   useEffect(() => {

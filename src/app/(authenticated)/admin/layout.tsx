@@ -1,7 +1,7 @@
 import { requireAdmin } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
-import AdminShell from "./AdminShell";
 import { getPendingPaymentRequestsCount } from "@/lib/billing/getAdminPaymentRequests";
+import AdminShell from "./_components/AdminShell";
 
 export const dynamic = "force-dynamic";
 

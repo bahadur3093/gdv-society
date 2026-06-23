@@ -90,6 +90,14 @@ export default function AdminLayout({
       link: "/sandbox/test-residents",
       title: "Residents",
     },
+    {
+      link: "/sandbox/test-villas",
+      title: "Villas",
+    },
+    {
+      link: "/sandbox/test-profile",
+      title: "profile",
+    },
   ];
 
   return (

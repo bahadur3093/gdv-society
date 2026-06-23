@@ -70,7 +70,7 @@ export default function EditResidentSheet({
       // Non-field-level errors get toast (field errors show inline)
       toast.error(state.message ?? "Update failed");
     }
-  }, [state.status, state.message]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [state]);
 
   // Submit
   const handleSubmit = () => {

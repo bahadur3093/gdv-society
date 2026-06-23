@@ -17,10 +17,11 @@ import FloatingTabBar, {
 import Avatar from "@/components/atoms/Avatar";
 import { cn } from "@/lib/utils/utils";
 import IconButton from "@/components/atoms/IconButton";
-import { signOut } from "next-auth/react";
+import UserMenu from "@/components/navigation/UserMenu";
 
 interface ResidentShellProps {
   userName: string;
+  userEmail: string;
   villaNo: number | null;
   children: React.ReactNode;
 }
@@ -62,6 +63,7 @@ const NAV_ITEMS: TabItem[] = [
 
 export default function ResidentShell({
   userName,
+  userEmail,
   villaNo,
   children,
 }: ResidentShellProps) {
@@ -128,16 +130,14 @@ export default function ResidentShell({
               showTooltip
             />
             {/* Desktop avatar */}
-            <button
-              onClick={() =>
-                signOut({ redirect: true, callbackUrl: "/auth/signin" })
-              }
-              type="button"
-              className="hidden md:flex items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2 focus-visible:ring-offset-bg-base"
-              aria-label="Profile menu"
-            >
-              <Avatar size="md" name={userName} ring="subtle" />
-            </button>
+
+            <UserMenu
+              name={userName}
+              email={userEmail ?? ""} // ← if userEmail not passed, you'll need to pass it from layout
+              role="RESIDENT"
+              profileHref="/resident/profile"
+              avatarSize="md"
+            />
           </div>
         </div>
       </header>

@@ -1,6 +1,6 @@
 import { requireResident } from "@/lib/auth/auth";
-import ResidentShell from "./ResidentShell";
 import prisma from "@/lib/prisma";
+import ResidentShell from "./_components/ResidentShell";
 
 export default async function ResidentLayout({
   children,
@@ -14,7 +14,7 @@ export default async function ResidentLayout({
   });
 
   return (
-    <ResidentShell userName={user.name} villaNo={villa?.villaNo ?? null}>
+    <ResidentShell userName={user.name} userEmail={user.email} villaNo={villa?.villaNo ?? null}>
       {children}
     </ResidentShell>
   );
