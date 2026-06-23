@@ -98,6 +98,10 @@ export default function AdminLayout({
       link: "/sandbox/test-profile",
       title: "profile",
     },
+    {
+      link: "/sandbox/test-expenses",
+      title: "expenses",
+    },
   ];
 
   return (

@@ -7,6 +7,7 @@ import {
   User as UserIcon,
   Sun,
   Moon,
+  TrendingDown,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -43,6 +44,13 @@ const NAV_ITEMS: TabItem[] = [
     icon: <FileText className="w-full h-full" />,
     label: "Ledger",
   },
+  {
+    key: "finances",
+    href: "/resident/expenses",
+    icon: <TrendingDown />,
+    label: "Finances",
+  },
+
   {
     key: "announcements",
     href: "/resident/announcements",
