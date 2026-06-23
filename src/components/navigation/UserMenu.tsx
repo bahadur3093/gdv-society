@@ -106,7 +106,7 @@ export default function UserMenu({
   const themeItems = [
     { value: "light", label: "Light", icon: <Sun className="w-full h-full" /> },
     { value: "dark", label: "Dark", icon: <Moon className="w-full h-full" /> },
-    // { value: "system", label: "System", icon: <Monitor className="w-full h-full" /> },
+    { value: "system", label: "System", icon: <Monitor className="w-full h-full" /> },
   ] as const;
 
   return (
