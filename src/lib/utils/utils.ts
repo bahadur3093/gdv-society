@@ -296,3 +296,20 @@ export function humanizeEnum(value: string): string {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 }
+
+export function isActiveRoute(
+  pathname: string,
+  href: string,
+  options: { rootHref?: string } = {},
+): boolean {
+  const rootHref = options.rootHref ?? "/";
+
+  // Exact match always wins
+  if (pathname === href) return true;
+
+  // For root-level paths, only exact match counts
+  if (href === rootHref) return false;
+
+  // For nested paths, allow child routes to match
+  return pathname.startsWith(href + "/");
+}

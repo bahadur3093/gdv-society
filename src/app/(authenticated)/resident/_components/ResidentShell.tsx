@@ -16,9 +16,10 @@ import FloatingTabBar, {
   type TabItem,
 } from "@/components/navigation/FloatingTabBar";
 import Avatar from "@/components/atoms/Avatar";
-import { cn } from "@/lib/utils/utils";
+import { cn, isActiveRoute } from "@/lib/utils/utils";
 import IconButton from "@/components/atoms/IconButton";
 import UserMenu from "@/components/navigation/UserMenu";
+import PullToRefresh from "@/components/organisms/PullToRefresh";
 
 interface ResidentShellProps {
   userName: string;
@@ -151,10 +152,13 @@ export default function ResidentShell({
       </header>
 
       {/* ───── Main content ───── */}
+
       <main className="flex-1 pb-32 md:pb-12">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-          {children}
-        </div>
+        <PullToRefresh>
+          <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+            {children}
+          </div>
+        </PullToRefresh>
       </main>
 
       {/* ───── Floating tab bar (mobile only) ───── */}
@@ -171,9 +175,9 @@ function DesktopNav() {
   return (
     <nav className="hidden md:flex items-center gap-1">
       {NAV_ITEMS.map((item) => {
-        const isActive =
-          pathname === item.href ||
-          (item.href !== "/resident" && pathname.startsWith(item.href));
+        const isActive = isActiveRoute(pathname, item.href, {
+          rootHref: "/resident",
+        });
 
         return (
           <Link

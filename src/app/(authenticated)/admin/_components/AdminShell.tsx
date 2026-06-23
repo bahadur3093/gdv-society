@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils/utils";
 import Avatar from "@/components/atoms/Avatar";
 import { buildAdminNav } from "./adminNav";
 import UserMenu from "@/components/navigation/UserMenu";
+import PullToRefresh from "@/components/organisms/PullToRefresh";
 
 interface AdminShellProps {
   userName: string;
@@ -143,10 +144,13 @@ export default function AdminShell({
         />
 
         {/* Page content */}
+
         <main className="flex-1 overflow-x-hidden">
-          <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
-            {children}
-          </div>
+          <PullToRefresh>
+            <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
+              {children}
+            </div>
+          </PullToRefresh>
         </main>
       </div>
     </div>
