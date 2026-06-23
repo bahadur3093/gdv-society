@@ -32,6 +32,10 @@ model User {
   adjustments          Adjustment[]           @relation("AdjustmentResident")
   adjustmentsCreated   Adjustment[]           @relation("AdjustmentCreator")
 
+  paymentRequestsSubmitted PaymentRequest[] @relation("PaymentRequestSubmitter")
+  paymentRequestsReviewed  PaymentRequest[] @relation("PaymentRequestReviewer")
+
+
   @@index([email])
   @@index([plotNumber])
 }
@@ -169,6 +173,7 @@ model Villa {
   user            User?    @relation(fields: [userId], references: [id])
   maintenanceBills MaintenanceBill[]
   payments         Payment[]
+  paymentRequests PaymentRequest[]
 
   @@index([villaNo])
   @@index([ownerName])
@@ -323,6 +328,7 @@ model Payment {
   user        User?         @relation("PaymentResident", fields: [userId], references: [id])
   recorder    User          @relation("PaymentRecorder", fields: [recordedBy], references: [id])
   allocations PaymentAllocation[]
+  paymentRequest PaymentRequest? @relation("PaymentRequestPayment")
 
   @@index([userId, paidAt])
 }
@@ -393,4 +399,49 @@ enum AdjustmentType {
   WRITE_OFF
   DISCOUNT
   CREDIT_NOTE
+}
+
+// Payment Requests
+
+model PaymentRequest {
+  id          String              @id @default(cuid())
+  villaId     String
+  userId      String              // resident who submitted the request
+
+  // Payment details
+  amount      Float
+  method      PaymentMethod
+  reference   String?             // UPI ref, txn ID, cheque no, etc.
+  notes       String?             // optional resident notes
+  receiptUrl  String?             // Vercel Blob URL — added in Step 30e
+
+  // Workflow
+  status      PaymentRequestStatus @default(PENDING)
+  submittedAt DateTime            @default(now())
+  reviewedAt  DateTime?
+  reviewedBy  String?             // admin user id who reviewed
+  reviewNotes String?             // admin's notes (esp. for rejection reason)
+
+  // Link to actual Payment record (set when approved)
+  paymentId   String?             @unique
+  payment     Payment?            @relation("PaymentRequestPayment", fields: [paymentId], references: [id])
+
+  // Relations
+  villa       Villa               @relation(fields: [villaId], references: [id])
+  user        User                @relation("PaymentRequestSubmitter", fields: [userId], references: [id])
+  reviewer    User?               @relation("PaymentRequestReviewer", fields: [reviewedBy], references: [id])
+
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@index([status, submittedAt])
+  @@index([villaId, status])
+  @@index([userId, status])
+}
+
+enum PaymentRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
 }

@@ -21,7 +21,7 @@ export async function POST(
       return authResult;
     }
     
-    const { user: admin } = authResult;
+    const { id: admin } = authResult;
 
     // Find the reset request
     const resetRequest = await prisma.passwordResetRequest.findUnique({
@@ -52,7 +52,7 @@ export async function POST(
       data: {
         status: 'DENIED',
         approvedAt: new Date(),
-        approvedBy: admin.id,
+        approvedBy: admin,
       },
     });
 

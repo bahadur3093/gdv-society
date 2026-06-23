@@ -13,7 +13,7 @@ export interface Breadcrumb {
   href?: string;
 }
 
-export interface PageHeaderProps extends HTMLAttributes<HTMLElement> {
+export interface PageHeaderProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   /** Breadcrumb path (optional) */
   breadcrumbs?: Breadcrumb[];
   /** Back button — href or onClick */

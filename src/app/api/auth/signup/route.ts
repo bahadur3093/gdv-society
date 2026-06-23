@@ -4,8 +4,9 @@ import { hashPassword } from '@/lib/utils/password';
 import { sendWelcomeEmail } from '@/lib/utils/email';
 import { signUpSchema } from '@/lib/validation/auth';
 import { validateRequest } from '@/lib/validation/common';
-import type { ApiResponse, User } from '@/types';
+import type { ApiResponse } from '@/types';
 import { HttpStatus } from '@/types';
+import { AppUser } from '@/types/auth';
 
 export async function POST(request: NextRequest) {
   try {
@@ -61,7 +62,7 @@ export async function POST(request: NextRequest) {
     });
 
     // Return user data (without password)
-    const userData: User = {
+    const userData: AppUser = {
       id: user.id,
       email: user.email,
       name: user.name,
@@ -72,7 +73,7 @@ export async function POST(request: NextRequest) {
       updatedAt: user.updatedAt.toISOString(),
     };
 
-    const response: ApiResponse<User> = {
+    const response: ApiResponse<AppUser> = {
       success: true,
       data: userData,
       message: 'User registered successfully',

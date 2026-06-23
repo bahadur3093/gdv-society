@@ -1,13 +1,11 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import villasReducer from './slices/villasSlice';
-import societySettingsReducer from './slices/societySettingsSlice';
 
 // Configure store
 export const store = configureStore({
   reducer: {
     villas: villasReducer,
-    societySettings: societySettingsReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({

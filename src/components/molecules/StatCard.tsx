@@ -27,7 +27,7 @@ export interface StatCardTrend {
   label?: string;
 }
 
-export interface StatCardProps extends Omit<CardProps, 'children'> {
+export interface StatCardProps extends Omit<CardProps, 'children' | 'variant'> {
   /** Small caps label above the value */
   label: string;
   /** The headline value */

@@ -595,16 +595,6 @@ export const PLOT_REGISTRY: PlotData[] = [
   },
 ];
 
-// Helper function to get plot data by villa number
-export const getPlotByVillaNumber = (villaNumber: string | number): PlotData | undefined => {
-  const villaNum = typeof villaNumber === 'string' ? parseInt(villaNumber, 10) : villaNumber;
-  if (isNaN(villaNum)) return undefined;
-  return PLOT_REGISTRY.find((plot) => plot.villaNo === villaNum);
-};
-
-// Deprecated: Use getPlotByVillaNumber instead
-export const getPlotByNumber = getPlotByVillaNumber;
-
 // Helper function to get all occupied plots
 export const getOccupiedPlots = (): PlotData[] => {
   return PLOT_REGISTRY.filter((plot) => plot.ownerName !== 'Not Occupied' && plot.ownerName !== '(No name)');

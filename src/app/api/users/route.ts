@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { paginationSchema } from '@/lib/validation/common';
-import type { ApiResponse, User, PaginatedResponse } from '@/types';
+import type { ApiResponse, PaginatedResponse } from '@/types';
 import { HttpStatus } from '@/types';
 import { requireAdmin } from '@/lib/auth/auth';
+import { AppUser } from '@/types/auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -45,7 +46,7 @@ export async function GET(request: NextRequest) {
     });
 
     // Transform to API response format
-    const data: User[] = users.map((user) => ({
+    const data: AppUser[] = users.map((user) => ({
       id: user.id,
       email: user.email,
       name: user.name,
@@ -56,7 +57,7 @@ export async function GET(request: NextRequest) {
       updatedAt: user.updatedAt.toISOString(),
     }));
 
-    const response: PaginatedResponse<User> = {
+    const response: PaginatedResponse<AppUser> = {
       success: true,
       data,
       pagination: {

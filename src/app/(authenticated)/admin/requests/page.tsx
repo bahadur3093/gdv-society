@@ -1,9 +1,21 @@
-import AdminRequestManagement from "@/components/templates/AdminRequestManagement";
+import ComingSoon from "@/components/templates/CommingSoon";
+import { requireResident } from "@/lib/auth/auth";
+import { UserCircle } from "lucide-react";
 
-export default function RequestsPage() {
+export const dynamic = "force-dynamic";
+
+export const metadata = {
+  title: "Requests — GDV Resident Hub",
+};
+
+export default async function RequestsPage() {
+  await requireResident();
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 transition-all duration-300 ease-in-out">
-      <AdminRequestManagement />;
-    </div>
+    <ComingSoon
+      icon={<UserCircle />}
+      title="Requests settings coming soon"
+      description="Update your personal info, contact details, family members, and notification preferences."
+    />
   );
 }

@@ -1,9 +1,21 @@
-import PlotLayoutMap from "@/components/templates/PlotLayoutMap";
+import ComingSoon from "@/components/templates/CommingSoon";
+import { requireResident } from "@/lib/auth/auth";
+import { UserCircle } from "lucide-react";
 
-export default function LayoutPage() {
+export const dynamic = "force-dynamic";
+
+export const metadata = {
+  title: "Layout — GDV Resident Hub",
+};
+
+export default async function LayoutPage() {
+  await requireResident();
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 transition-all duration-300 ease-in-out">
-      <PlotLayoutMap userRole="admin" />
-    </div>
+    <ComingSoon
+      icon={<UserCircle />}
+      title="Layout settings coming soon"
+      description="Update your personal info, contact details, family members, and notification preferences."
+    />
   );
 }

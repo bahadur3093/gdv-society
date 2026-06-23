@@ -1,6 +1,5 @@
 import { auth } from '@/lib/auth';
 import { redirect } from 'next/navigation';
-import ExpenseManager from '@/components/templates/ExpenseManager';
 import { prisma } from '@/lib/prisma';
 
 export default async function ExpenseManagerPage() {
@@ -21,7 +20,7 @@ export default async function ExpenseManagerPage() {
   return (
     <div className="min-h-screen bg-linear-to-br from-slate-950 via-slate-900 to-slate-950 p-6">
       <div className="max-w-7xl mx-auto">
-        <ExpenseManager isAdmin={isAdmin} />
+        Expense
       </div>
     </div>
   );

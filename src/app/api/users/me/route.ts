@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/auth/auth-helpers';
-import type { ApiResponse, User } from '@/types';
+import type { ApiResponse } from '@/types';
 import { HttpStatus } from '@/types';
+import { AppUser } from '@/types/auth';
 
 export async function GET(request: NextRequest) {
   try {
@@ -40,7 +41,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Transform to API response format
-    const userData: User = {
+    const userData: AppUser = {
       id: user.id,
       email: user.email,
       name: user.name,
@@ -51,7 +52,7 @@ export async function GET(request: NextRequest) {
       updatedAt: user.updatedAt.toISOString(),
     };
 
-    const response: ApiResponse<User> = {
+    const response: ApiResponse<AppUser> = {
       success: true,
       data: userData,
     };

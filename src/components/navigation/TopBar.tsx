@@ -3,7 +3,7 @@
 import { cn } from '@/lib/utils/utils';
 import { forwardRef, useEffect, useState, type ReactNode, type HTMLAttributes } from 'react';
 
-export interface TopBarProps extends HTMLAttributes<HTMLElement> {
+export interface TopBarProps extends Omit<HTMLAttributes<HTMLElement>, 'title'> {
   /** Left slot — typically a menu hamburger or back button */
   leading?: ReactNode;
   /** Title — string or custom JSX */

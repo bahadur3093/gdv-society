@@ -9,6 +9,8 @@ import EmptyState from "@/components/organisms/EmptyState";
 import RecentActivity from "./_components/RecentActivity";
 import AnnouncementsCard from "./_components/AnnouncementsCard";
 import HelpDeskCard from "./_components/HelpDeskCard";
+import { getResidentPendingRequests } from "@/lib/billing/getResidentPendingRequests";
+import PendingRequestsBanner from "./_components/PendingRequestsBanner";
 
 export const dynamic = "force-dynamic";
 
@@ -20,7 +22,7 @@ export default async function ResidentHomePage() {
   const user = await requireResident();
 
   // Fetch ledger + announcements in parallel
-  const [data, announcements] = await Promise.all([
+  const [data, announcements, pendingRequests] = await Promise.all([
     getResidentLedger(user.id),
     prisma.announcement.findMany({
       where: { isActive: true },
@@ -35,6 +37,7 @@ export default async function ResidentHomePage() {
         publishDate: true,
       },
     }),
+    getResidentPendingRequests(user.id),
   ]);
 
   // ─── Derivations ───
@@ -53,7 +56,7 @@ export default async function ResidentHomePage() {
   const recentEntries = data.entries.slice(0, 5);
 
   const latestAnnouncement = announcements[0] ?? null;
-  console.log({latestAnnouncement})
+  console.log({ latestAnnouncement });
 
   // ─── No villa edge case ───
   if (!data.villa) {
@@ -71,6 +74,10 @@ export default async function ResidentHomePage() {
 
   return (
     <div className="space-y-6 md:space-y-8">
+      {pendingRequests.length > 0 && (
+        <PendingRequestsBanner requests={pendingRequests} />
+      )}
+
       {/* ─── Hero ─── */}
       <HeroCard
         outstandingBalance={data.summary.outstandingBalance}

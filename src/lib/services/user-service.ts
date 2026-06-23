@@ -4,35 +4,35 @@
  */
 
 import { apiClient } from '@/lib/api-client';
-import type { User } from '@/types';
+import { AppUser } from '@/types/auth';
 
 export class UserService {
   /**
    * Get current user profile
    */
-  async getCurrentUser(): Promise<User> {
-    return apiClient.get<User>('/users/me');
+  async getCurrentUser(): Promise<AppUser> {
+    return apiClient.get<AppUser>('/users/me');
   }
 
   /**
    * Get user by ID (admin only)
    */
-  async getUserById(userId: string): Promise<User> {
-    return apiClient.get<User>(`/users/${userId}`);
+  async getUserById(userId: string): Promise<AppUser> {
+    return apiClient.get<AppUser>(`/users/${userId}`);
   }
 
   /**
    * Get all users (admin only)
    */
-  async getAllUsers(): Promise<User[]> {
-    return apiClient.get<User[]>('/users');
+  async getAllUsers(): Promise<AppUser[]> {
+    return apiClient.get<AppUser[]>('/users');
   }
 
   /**
    * Update user profile
    */
-  async updateUser(userId: string, data: Partial<User>): Promise<User> {
-    return apiClient.put<User>(`/users/${userId}`, data);
+  async updateUser(userId: string, data: Partial<AppUser>): Promise<AppUser> {
+    return apiClient.put<AppUser>(`/users/${userId}`, data);
   }
 
   /**

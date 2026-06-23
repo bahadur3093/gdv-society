@@ -1,9 +1,21 @@
-import MasterVillaDetails from "@/components/templates/MasterVillaDetails";
+import ComingSoon from "@/components/templates/CommingSoon";
+import { requireResident } from "@/lib/auth/auth";
+import { UserCircle } from "lucide-react";
 
-export default function VillasPage() {
+export const dynamic = "force-dynamic";
+
+export const metadata = {
+  title: "Villas — GDV Resident Hub",
+};
+
+export default async function VillasPage() {
+  await requireResident();
+
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 transition-all duration-300 ease-in-out">
-      <MasterVillaDetails />
-    </div>
+    <ComingSoon
+      icon={<UserCircle />}
+      title="Villas settings coming soon"
+      description="Update your personal info, contact details, family members, and notification preferences."
+    />
   );
 }

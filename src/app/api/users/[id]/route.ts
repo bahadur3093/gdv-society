@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import type { ApiResponse, User } from '@/types';
+import type { ApiResponse } from '@/types';
 import { HttpStatus } from '@/types';
 import { requireAdmin } from '@/lib/auth/auth';
+import { AppUser } from '@/types/auth';
 
 // Validation schema for updating a user
 const updateUserSchema = z.object({
@@ -48,7 +49,7 @@ export async function GET(
       return NextResponse.json(response, { status: HttpStatus.NOT_FOUND });
     }
 
-    const data: User = {
+    const data: AppUser = {
       id: user.id,
       email: user.email,
       name: user.name,
@@ -59,7 +60,7 @@ export async function GET(
       updatedAt: user.updatedAt.toISOString(),
     };
 
-    const response: ApiResponse<User> = { success: true, data };
+    const response: ApiResponse<AppUser> = { success: true, data };
     return NextResponse.json(response, { status: HttpStatus.OK });
   } catch (error: any) {
     console.error('Get user error:', error);
@@ -114,7 +115,7 @@ export async function PUT(
       },
     });
 
-    const data: User = {
+    const data: AppUser = {
       id: user.id,
       email: user.email,
       name: user.name,
@@ -125,7 +126,7 @@ export async function PUT(
       updatedAt: user.updatedAt.toISOString(),
     };
 
-    const response: ApiResponse<User> = { success: true, data };
+    const response: ApiResponse<AppUser> = { success: true, data };
     return NextResponse.json(response, { status: HttpStatus.OK });
   } catch (error: any) {
     console.error('Update user error:', error);

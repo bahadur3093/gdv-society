@@ -1,11 +1,11 @@
 // lib/billing/generateMonthlyBills.ts
 
-import 'server-only';
-import { prisma } from '@/lib/prisma';
-import { BillStatus, Prisma } from '@prisma/client';
+import "server-only";
+import { prisma } from "@/lib/prisma";
+import { BillStatus } from "../enums";
 
 export interface GenerateBillsInput {
-  month: number;        // 1-12
+  month: number; // 1-12
   year: number;
   dueDayOfMonth?: number;
 }
@@ -16,15 +16,15 @@ export interface GenerateBillsResult {
   totalAmount: number;
   details: {
     villaNo: number;
-    label: string;        // resident name OR owner name OR "Unclaimed"
+    label: string; // resident name OR owner name OR "Unclaimed"
     amount: number;
-    status: 'CREATED' | 'SKIPPED';
+    status: "CREATED" | "SKIPPED";
     skipReason?: string;
   }[];
 }
 
 export async function generateMonthlyBills(
-  input: GenerateBillsInput
+  input: GenerateBillsInput,
 ): Promise<GenerateBillsResult> {
   const { month, year, dueDayOfMonth = 10 } = input;
 
@@ -33,7 +33,7 @@ export async function generateMonthlyBills(
   // ───────────────────────────────────────────────────────────
   const [settings, villas, existingBills] = await Promise.all([
     prisma.societySettings.findFirst({
-      orderBy: { createdAt: 'desc' },
+      orderBy: { createdAt: "desc" },
       select: { perSqFtRate: true },
     }),
     // 🆕 ALL villas with positive area (not filtered by userId anymore)
@@ -47,7 +47,7 @@ export async function generateMonthlyBills(
         userId: true,
         user: { select: { name: true } },
       },
-      orderBy: { villaNo: 'asc' },
+      orderBy: { villaNo: "asc" },
     }),
     // 🆕 Check existing bills by villa, not user
     prisma.maintenanceBill.findMany({
@@ -57,11 +57,15 @@ export async function generateMonthlyBills(
   ]);
 
   if (!settings) {
-    throw new Error('Society settings not configured. Set per-sqft rate first.');
+    throw new Error(
+      "Society settings not configured. Set per-sqft rate first.",
+    );
   }
 
   const ratePerSqFt = settings.perSqFtRate;
-  const existingVillaIds = new Set(existingBills.map((b) => b.villaId));
+  const existingVillaIds = new Set(
+    existingBills.map((b: { villaId: string }) => b.villaId),
+  );
 
   // ───────────────────────────────────────────────────────────
   // 2. Build bill payloads — one per villa
@@ -69,11 +73,24 @@ export async function generateMonthlyBills(
   const dueDate = new Date(Date.UTC(year, month - 1, dueDayOfMonth));
   const createdAt = new Date(Date.UTC(year, month - 1, 1));
 
-  const toCreate: Prisma.MaintenanceBillCreateManyInput[] = [];
-  const details: GenerateBillsResult['details'] = [];
+  const toCreate: Array<{
+    villaId: string;
+    userId: string | null;
+    month: number;
+    year: number;
+    areaInSqFt: number;
+    ratePerSqFt: number;
+    amount: number;
+    dueDate: Date;
+    status: BillStatus;
+    createdAt: Date;
+  }> = [];
+
+  const details: GenerateBillsResult["details"] = [];
 
   for (const villa of villas) {
-    const label = villa.user?.name ?? villa.ownerName ?? `Villa ${villa.villaNo}`;
+    const label =
+      villa.user?.name ?? villa.ownerName ?? `Villa ${villa.villaNo}`;
     const amount = villa.areaInSqFt * ratePerSqFt;
 
     if (existingVillaIds.has(villa.id)) {
@@ -81,22 +98,22 @@ export async function generateMonthlyBills(
         villaNo: villa.villaNo,
         label,
         amount,
-        status: 'SKIPPED',
-        skipReason: 'Already billed',
+        status: "SKIPPED",
+        skipReason: "Already billed",
       });
       continue;
     }
 
     toCreate.push({
       villaId: villa.id,
-      userId: villa.userId ?? null, 
+      userId: villa.userId ?? null,
       month,
       year,
       areaInSqFt: villa.areaInSqFt,
       ratePerSqFt,
       amount,
       dueDate,
-      status: BillStatus.PENDING,
+      status: "PENDING" as BillStatus,
       createdAt,
     });
 
@@ -104,7 +121,7 @@ export async function generateMonthlyBills(
       villaNo: villa.villaNo,
       label,
       amount,
-      status: 'CREATED',
+      status: "CREATED",
     });
   }
 
@@ -119,7 +136,7 @@ export async function generateMonthlyBills(
 
   return {
     generatedCount: toCreate.length,
-    skippedCount: details.filter((d) => d.status === 'SKIPPED').length,
+    skippedCount: details.filter((d) => d.status === "SKIPPED").length,
     totalAmount,
     details,
   };

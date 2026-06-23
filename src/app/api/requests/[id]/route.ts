@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { requireAuth, requireAdmin } from '@/lib/auth/auth-helpers';
+import { requireAuth } from '@/lib/auth/auth-helpers';
 import type { ApiResponse } from '@/types';
 import { HttpStatus } from '@/types';
 import { z } from 'zod';
+import { requireAdmin } from '@/lib/auth/auth';
 
 // Validation schema for updating request
 const updateRequestSchema = z.object({

@@ -1,8 +1,9 @@
-import { requireAdmin } from '@/lib/auth/auth';
-import { prisma } from '@/lib/prisma';
-import AdminShell from './AdminShell';
+import { requireAdmin } from "@/lib/auth/auth";
+import { prisma } from "@/lib/prisma";
+import AdminShell from "./AdminShell";
+import { getPendingPaymentRequestsCount } from "@/lib/billing/getAdminPaymentRequests";
 
-export const dynamic = 'force-dynamic';
+export const dynamic = "force-dynamic";
 
 export default async function AdminLayout({
   children,
@@ -11,12 +12,11 @@ export default async function AdminLayout({
 }) {
   const user = await requireAdmin();
 
-  // Fetch live badge counts in parallel
-  const [pendingRequestsCount] = await Promise.all([
+  const [pendingRequestsCount, pendingPaymentsCount] = await Promise.all([
     prisma.residentRequest.count({
-      where: { status: { in: ['PENDING', 'IN_PROGRESS'] } },
+      where: { status: { in: ["PENDING", "IN_PROGRESS"] } },
     }),
-    // pendingPaymentsCount: future when PaymentRequest model exists
+    getPendingPaymentRequestsCount(),
   ]);
 
   return (
@@ -25,6 +25,7 @@ export default async function AdminLayout({
       userEmail={user.email}
       badges={{
         pendingRequests: pendingRequestsCount,
+        pendingPayments: pendingPaymentsCount,
       }}
     >
       {children}

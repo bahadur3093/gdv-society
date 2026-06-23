@@ -1,9 +1,10 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
-import "./globals.css";
-import { Providers } from "./providers";
 import { auth } from "@/lib/auth/auth";
 import { Toaster } from "@/components/atoms/Toast";
+
+import { Providers } from "./providers";
+import "./globals.css";
 
 const inter = Inter({
   variable: "--font-inter",
@@ -18,9 +19,40 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "GDV Resident Hub",
+  title: {
+    default: "GDV Society Hub",
+    template: "%s | GDV Society",
+  },
   description:
-    "Modern multi-screen web application for GDV Society residents and administrators to manage maintenance, accounts, and community operations.",
+    "Society maintenance & community management for GDV residents and admins.",
+  applicationName: "GDV Society",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "GDV Society",
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  manifest: "/manifest.json",
+  icons: {
+    icon: [
+      { url: "/icons/favicon-32.png", sizes: "32x32", type: "image/png" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/icon-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: [{ url: "/icons/apple-touch-icon.png", sizes: "180x180" }],
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#FAFAFA" },
+    { media: "(prefers-color-scheme: dark)", color: "#0A0A0C" },
+  ],
 };
 
 const themeInitScript = `

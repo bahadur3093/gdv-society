@@ -11,7 +11,7 @@ export interface FormFieldProps {
   /** Required indicator — adds red asterisk */
   required?: boolean;
   /** Helper text shown below the field (overridden by errorText if present) */
-  helperText?: string;
+  helperText?: ReactNode;
   /** Error message — shows in red, also passes error state to child input */
   errorText?: string;
   /** Success message — shows in green, also passes success state */

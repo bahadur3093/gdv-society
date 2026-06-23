@@ -5,7 +5,8 @@
 
 import { signIn, signOut } from 'next-auth/react';
 import { apiClient } from '@/lib/api-client';
-import type { User, SignUpRequest } from '@/types';
+import type { SignUpRequest } from '@/types';
+import { AppUser } from '@/types/auth';
 
 export interface SignInParams {
   email: string;
@@ -61,8 +62,8 @@ export class AuthService {
   /**
    * Register new user
    */
-  async signUp(data: SignUpRequest): Promise<User> {
-    return apiClient.post<User>('/auth/signup', data);
+  async signUp(data: SignUpRequest): Promise<AppUser> {
+    return apiClient.post<AppUser>('/auth/signup', data);
   }
 
   /**
