@@ -335,7 +335,7 @@ export default function SectionsSandbox() {
             defaultOpen={false}
             title="Recent Activity"
             description="Last 7 days of transactions"
-            icon={<History />}
+            icon={<History className="w-full h-full" />}
           >
             <Card padding="md" variant="sunken">
               <p className="text-body text-text-secondary text-center py-4">

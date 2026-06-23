@@ -6,6 +6,8 @@ import {
   useId,
   type HTMLAttributes,
   type ReactNode,
+  isValidElement,
+  cloneElement,
 } from "react";
 import { ChevronDown } from "lucide-react";
 import Badge, { BadgeProps } from "../atoms/Badge";
@@ -177,7 +179,7 @@ const Section = forwardRef<HTMLElement, SectionProps>(function Section(
       )}
     >
       {/* Left side: icon + title + description */}
-      <div className={cn("flex items-start flex-1 min-w-0", sz.headerGap)}>
+      <div className={cn("flex items-start flex-1 min-w-0 mb-2", sz.headerGap)}>
         {icon && (
           <div
             className={cn(
@@ -186,7 +188,9 @@ const Section = forwardRef<HTMLElement, SectionProps>(function Section(
               sz.iconWrap,
             )}
           >
-            <span className={cn("inline-flex", sz.iconSize)}>{icon}</span>
+            <span className={cn("inline-flex", sz.iconSize)}>
+              {renderIcon(icon)}
+            </span>
           </div>
         )}
         <div className="flex-1 min-w-0">
@@ -266,3 +270,12 @@ const Section = forwardRef<HTMLElement, SectionProps>(function Section(
 });
 
 export default Section;
+
+function renderIcon(icon: React.ReactNode): React.ReactNode {
+  if (!isValidElement(icon)) return icon;
+
+  const child = icon as React.ReactElement<{ className?: string }>;
+  return cloneElement(child, {
+    className: cn("w-full h-full", child.props.className),
+  });
+}

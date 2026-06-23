@@ -82,6 +82,14 @@ export default function AdminLayout({
       link: "/sandbox/pro-table",
       title: "Pro Table",
     },
+    {
+      link: "/sandbox/rich-editor",
+      title: "Rich Editor",
+    },
+    {
+      link: "/sandbox/test-residents",
+      title: "Residents",
+    },
   ];
 
   return (

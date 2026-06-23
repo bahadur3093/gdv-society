@@ -39,7 +39,7 @@ export default function RecentActivity({ entries }: RecentActivityProps) {
         {entries.length === 0 ? (
           <EmptyState
             size="sm"
-            icon={<Inbox />}
+            icon={<Inbox className="w-full h-full" />}
             title="No transactions yet"
             description="Your bills and payments will appear here."
           />

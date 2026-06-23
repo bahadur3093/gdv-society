@@ -361,18 +361,125 @@ body {
 
 /* Reduced motion */
 
-
 /* Vaul drawer styles — prevents background scroll + smooths body */
 [vaul-drawer] {
   touch-action: none;
 }
 
 [vaul-drawer][data-state="open"]::after {
-  content: '';
+  content: "";
   position: absolute;
   top: 100%;
   left: 0;
   right: 0;
   background: inherit;
   height: 200%;
+}
+
+/* Rich text editor content styling */
+.editor-prose {
+  color: hsl(var(--color-text-primary));
+}
+
+.editor-prose:focus {
+  outline: none;
+}
+
+.editor-prose ::selection {
+  background-color: rgba(139, 92, 246, 0.2);
+}
+
+.editor-prose h1 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  line-height: 1.2;
+  color: hsl(var(--color-brand-primary));
+  margin-top: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.editor-prose h1:first-child {
+  margin-top: 0;
+}
+
+.editor-prose h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  line-height: 1.3;
+  color: hsl(var(--color-text-primary));
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.editor-prose h3 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.4;
+  color: hsl(var(--color-text-primary));
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.editor-prose p {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.editor-prose p:first-child {
+  margin-top: 0;
+}
+
+.editor-prose ul,
+.editor-prose ol {
+  padding-left: 1.5rem;
+}
+
+.editor-prose ul li {
+  list-style-type: disc;
+}
+
+.editor-prose ol li {
+  list-style-type: decimal;
+}
+
+.editor-prose strong {
+  font-weight: 700;
+  color: hsl(var(--color-text-primary));
+}
+
+.editor-prose em {
+  font-style: italic;
+}
+
+.editor-prose u {
+  text-decoration: underline;
+}
+
+.editor-prose s {
+  text-decoration: line-through;
+}
+
+.editor-prose hr {
+  border: none;
+  border-top: 1px solid hsl(var(--color-border-subtle));
+  margin: 1.5rem 0;
+}
+
+.editor-prose a {
+  color: hsl(var(--color-brand-primary));
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.editor-prose a:hover {
+  opacity: 0.8;
+}
+
+/* ProseMirror placeholder */
+.editor-prose .is-editor-empty:first-child::before {
+  content: attr(data-placeholder);
+  color: hsl(var(--color-text-muted));
+  float: left;
+  height: 0;
+  pointer-events: none;
 }
