@@ -153,7 +153,7 @@ export default function ResidentShell({
 
       {/* ───── Main content ───── */}
 
-      <main className="flex-1 pb-32 md:pb-12">
+      <main className="flex-1 pb-24 md:pb-12">
         <PullToRefresh>
           <div className="max-w-7xl mx-auto px-4 md:px-6 py-6 md:py-8">
             {children}
@@ -163,7 +163,7 @@ export default function ResidentShell({
 
       {/* ───── Floating tab bar (mobile only) ───── */}
       <div className="md:hidden">
-        <FloatingTabBar items={NAV_ITEMS} hideOnScroll />
+        <FloatingTabBar items={NAV_ITEMS} rootHref="/resident" />
       </div>
     </div>
   );

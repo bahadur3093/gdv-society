@@ -81,7 +81,7 @@ export default function FloatingTabBarSandbox() {
   ];
 
   return (
-    <div className="max-w-md mx-auto p-6 pb-32 space-y-8">
+    <div className="max-w-md mx-auto p-6 pb-24 space-y-8">
       <header>
         <h1 className="text-h1 text-text-primary">FloatingTabBar</h1>
         <p className="text-body text-text-secondary mt-2">
@@ -179,7 +179,6 @@ export default function FloatingTabBarSandbox() {
       <FloatingTabBar
         items={residentTabs}
         showLabels={showLabels}
-        hideOnScroll={hideOnScroll}
       />
     </div>
   );
