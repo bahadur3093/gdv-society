@@ -42,8 +42,14 @@ export default function AccountSection({ email }: Props) {
     startSignOutTransition(async () => {
       try {
         await signOutAction();
-      } catch {
-        toast.error("Failed to sign out");
+      } catch (e) {
+        if (e instanceof Error && e.message.startsWith("NEXT_REDIRECT")) {
+          throw e;
+        }
+
+        toast.error("Failed to sign out", {
+          description: e instanceof Error ? e.message : "Please try again",
+        });
       }
     });
   };
@@ -141,8 +147,8 @@ export default function AccountSection({ email }: Props) {
         <div className="flex items-start gap-3 p-3 rounded-md bg-info-muted border border-info-border">
           <AlertCircle className="w-4 h-4 text-info shrink-0 mt-0.5" />
           <p className="text-body-sm text-info">
-            Your request will appear in the admin&apos;s queue. They&apos;ll review and
-            email you the reset link within 24 hours.
+            Your request will appear in the admin&apos;s queue. They&apos;ll
+            review and email you the reset link within 24 hours.
           </p>
         </div>
       </Modal>

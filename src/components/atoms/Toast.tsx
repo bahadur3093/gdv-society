@@ -81,11 +81,11 @@ export function Toaster() {
             "flex items-center justify-center",
           ].join(" "),
           // Variant-specific tints
-          success: "!border-success-border !bg-success-muted",
-          error: "!border-danger-border !bg-danger-muted",
-          warning: "!border-warning-border !bg-warning-muted",
-          info: "!border-info-border !bg-info-muted",
-          loading: "!border-border-default",
+          success: "!bg-success !border-success !text-white [&_*]:!text-white",
+          error: "!bg-danger !border-danger !text-white [&_*]:!text-white",
+          warning: "!bg-warning !border-warning !text-white [&_*]:!text-white",
+          info: "!bg-info !border-info !text-white [&_*]:!text-white",
+          loading: "!bg-bg-elevated !border-border-default",
         },
       }}
     />

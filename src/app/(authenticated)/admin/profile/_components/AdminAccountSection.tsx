@@ -20,6 +20,10 @@ export default function AdminAccountSection({ email }: Props) {
       try {
         await signOutAction();
       } catch (e) {
+        if (e instanceof Error && e.message.startsWith("NEXT_REDIRECT")) {
+          throw e;
+        }
+
         toast.error("Failed to sign out", {
           description: e instanceof Error ? e.message : "Please try again",
         });

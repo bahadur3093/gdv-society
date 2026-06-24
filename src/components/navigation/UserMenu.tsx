@@ -93,8 +93,11 @@ export default function UserMenu({
     startSignOutTransition(async () => {
       try {
         await signOutAction();
-        // Note: redirect happens server-side
       } catch (e) {
+        if (e instanceof Error && e.message.startsWith("NEXT_REDIRECT")) {
+          throw e;
+        }
+
         toast.error("Failed to sign out", {
           description: e instanceof Error ? e.message : "Please try again",
         });
@@ -106,7 +109,11 @@ export default function UserMenu({
   const themeItems = [
     { value: "light", label: "Light", icon: <Sun className="w-full h-full" /> },
     { value: "dark", label: "Dark", icon: <Moon className="w-full h-full" /> },
-    { value: "system", label: "System", icon: <Monitor className="w-full h-full" /> },
+    {
+      value: "system",
+      label: "System",
+      icon: <Monitor className="w-full h-full" />,
+    },
   ] as const;
 
   return (
@@ -234,7 +241,11 @@ export default function UserMenu({
           <div className="py-1.5 border-t border-border-subtle">
             <MenuButton
               icon={
-                isSigningOut ? <Loader2 className="animate-spin" /> : <LogOut className="w-full h-full" />
+                isSigningOut ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  <LogOut className="w-full h-full" />
+                )
               }
               label={isSigningOut ? "Signing out…" : "Sign out"}
               onClick={handleSignOut}

@@ -14,7 +14,6 @@ export async function pingAdminAction(): Promise<{
   success: boolean;
   message: string;
 }> {
-    console.log('session');
   const session = await auth();
   if (!session?.user?.email) {
     return { success: false, message: "Not signed in" };

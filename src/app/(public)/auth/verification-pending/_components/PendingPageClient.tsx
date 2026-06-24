@@ -1,12 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import {
-  Hourglass,
-  Info,
-  LogOut,
-  MessageCircle,
-} from "lucide-react";
+import { Hourglass, Info, LogOut, MessageCircle } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
 import { pingAdminAction, signOutFromPendingAction } from "../actions";
 import { toast } from "@/components/atoms/Toast";
@@ -45,8 +40,14 @@ export default function PendingPageClient({ userEmail, userName }: Props) {
     startSignOutTransition(async () => {
       try {
         await signOutFromPendingAction();
-      } catch {
-        toast.error("Failed to sign out. Please try again.");
+      } catch (e) {
+        if (e instanceof Error && e.message.startsWith("NEXT_REDIRECT")) {
+          throw e;
+        }
+
+        toast.error("Failed to sign out", {
+          description: e instanceof Error ? e.message : "Please try again",
+        });
       }
     });
   };
