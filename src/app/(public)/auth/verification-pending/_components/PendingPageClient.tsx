@@ -1,15 +1,14 @@
 "use client";
 
-import { useTransition } from "react";
+import { useState, useTransition } from "react";
 import {
   Hourglass,
   Info,
-  ArrowRight,
   LogOut,
   MessageCircle,
 } from "lucide-react";
 import AuthLayout from "@/components/auth/AuthLayout";
-import { signOutFromPendingAction } from "../actions";
+import { pingAdminAction, signOutFromPendingAction } from "../actions";
 import { toast } from "@/components/atoms/Toast";
 import { cn } from "@/lib/utils/utils";
 
@@ -20,6 +19,27 @@ interface Props {
 
 export default function PendingPageClient({ userEmail, userName }: Props) {
   const [isSigningOut, startSignOutTransition] = useTransition();
+
+  const [isPinging, startPing] = useTransition();
+  const [lastPinged, setLastPinged] = useState<number | null>(null);
+
+  const handlePing = () => {
+    // Rate limit: 5 min between pings
+    if (lastPinged && Date.now() - lastPinged < 10 * 1000) {
+      toast.warning("Please wait a few minutes before notifying again");
+      return;
+    }
+
+    startPing(async () => {
+      const result = await pingAdminAction();
+      if (result.success) {
+        toast.success(result.message);
+        setLastPinged(Date.now());
+      } else {
+        toast.error(result.message);
+      }
+    });
+  };
 
   const handleSignOut = () => {
     startSignOutTransition(async () => {
@@ -116,25 +136,39 @@ export default function PendingPageClient({ userEmail, userName }: Props) {
         </div>
 
         {/* Action links */}
-        {/* <div className="space-y-4">
-          <a
-            href={`https://wa.me/91XXXXXXXXXX?text=${encodeURIComponent(
-              `Hi! I just signed up for GDV Society Hub.\n\nMy account (${userEmail}) is pending approval.\n\nName: ${userName}\n\nCould you please review and activate it? Thanks!`,
-            )}`}
-            target="_blank"
-            rel="noopener noreferrer"
+        <div
+          className={cn(
+            "flex items-start gap-3 p-4 rounded-md",
+            "bg-info-muted border border-info-border",
+          )}
+        >
+          <MessageCircle className="w-5 h-5 text-info shrink-0 mt-0.5" />
+          <p className="text-body-sm text-info">
+            Our admin has been notified. You'll be able to sign in as soon as
+            your account is approved.
+          </p>
+        </div>
+        <div className="space-y-4">
+          <button
+            type="button"
+            onClick={handlePing}
+            disabled={isPinging}
             className={cn(
-              "inline-flex items-center gap-2",
-              "text-body font-medium text-brand-primary",
-              "hover:text-brand-primary-hover hover:underline",
-              "focus-visible:outline-none focus-visible:underline",
-              "transition-colors duration-(--duration-fast)",
+              "inline-flex items-center justify-center gap-2",
+              "h-12 px-6 rounded-full",
+              "bg-(image:--gradient-brand)",
+              "text-white font-semibold",
+              "shadow-lg shadow-brand-primary/20",
+              "transition-all duration-(--duration-fast)",
+              "hover:opacity-95 active:scale-[0.98]",
+              "disabled:opacity-50 disabled:cursor-not-allowed",
             )}
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Message admin on WhatsApp</span>
-            <ArrowRight className="w-4 h-4" />
-          </a>
+            <span>
+              {isPinging ? "Notifying admin..." : "Notify admin again"}
+            </span>
+          </button>
 
           <div className="pt-2 border-t border-border-subtle">
             <button
@@ -154,7 +188,7 @@ export default function PendingPageClient({ userEmail, userName }: Props) {
               <span>{isSigningOut ? "Signing out…" : "Sign out"}</span>
             </button>
           </div>
-        </div> */}
+        </div>
       </div>
     </AuthLayout>
   );

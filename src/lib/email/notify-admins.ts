@@ -2,6 +2,7 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { sendEmail } from "./resend";
 import NewSignupNotificationEmail from "@/emails/NewSignupNotificationEmail";
+import { sendTelegram } from "../notifications/telegram";
 
 interface NotifyAdminOfSignupOptions {
   newUserName: string;
@@ -86,8 +87,35 @@ export async function notifyAdminOfSignup(
         }),
       );
     }
+
+    const telegramText = `🆕 *New Signup*
+                            *Name:* ${options.newUserName}
+                            *Email:* ${options.newUserEmail}
+                            *Plot:* ${options.newUserPlotNumber ?? "Not provided"}
+
+                            Tap below to review and approve.`;
+
+    const isProduction =
+      process.env.NODE_ENV === "production" &&
+      !approveUrl.includes("localhost");
+
+    const telegramResult = await sendTelegram({
+      text: telegramText + (isProduction ? "" : `\n\n*Link:* ${approveUrl}`),
+      buttons: isProduction
+        ? [{ text: "✓ Review & Approve", url: approveUrl }]
+        : undefined,
+    });
+
+    if (telegramResult.success) {
+      console.log(
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          event: "admin_telegram_notification_sent",
+          newUserId: options.newUserId,
+        }),
+      );
+    }
   } catch (error) {
-    // Catch-all: notification failure must NOT affect signup
     console.error("[notify-admins] Unexpected error:", error);
   }
 }
