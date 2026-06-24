@@ -2,6 +2,7 @@
 
 import { auth, signOut } from "@/lib/auth/auth";
 import { notifyAdminOfSignup } from "@/lib/email/notify-admins";
+import prisma from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
 export async function signOutFromPendingAction(): Promise<void> {
