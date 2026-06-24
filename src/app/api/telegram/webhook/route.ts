@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
 import { sendTelegram } from "@/lib/notifications/telegram";
+import { processUserMessage } from "@/lib/telegram/llm";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 30;
+export const maxDuration = 60;
 
 interface TelegramMessage {
   message_id: number;
@@ -28,7 +29,6 @@ export async function POST(request: Request) {
   try {
     const body = (await request.json()) as TelegramUpdate;
 
-    // Log every incoming update for debugging
     console.log(
       JSON.stringify({
         timestamp: new Date().toISOString(),
@@ -47,7 +47,7 @@ export async function POST(request: Request) {
     const chatId = String(message.chat.id);
     const adminChatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
 
-    // Security: only respond to admin chat
+    // Security: admin chat only
     if (!adminChatId || chatId !== adminChatId) {
       console.warn(
         JSON.stringify({
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       );
 
       await sendTelegram({
-        text: "⛔ <b>Not authorized</b>\n\nThis bot is restricted to a specific admin.",
+        text: "⛔ <b>Not authorized</b>",
         chatId,
       });
 
@@ -68,47 +68,54 @@ export async function POST(request: Request) {
 
     const userText = message.text.trim();
 
-    // Health check command
+    // Built-in commands
     if (userText === "/start" || userText === "/help") {
       await sendTelegram({
         text: [
           "👋 <b>GDV Society Bot</b>",
           "",
-          "I can help you query society data. Try asking:",
+          "Ask me anything about your society. Examples:",
           "",
           '• <i>"show pending users"</i>',
-          '• <i>"any unpaid bills?"</i>',
-          '• <i>"give me society stats"</i>',
-          '• <i>"who lives in villa 39?"</i>',
+          '• <i>"who has unpaid bills?"</i>',
+          '• <i>"give me a quick overview"</i>',
+          '• <i>"tell me about villa 39"</i>',
+          '• <i>"find resident bahadur"</i>',
           "",
-          "Just type naturally — I'll figure out the rest.",
+          "<i>Just type naturally — I'll figure it out.</i>",
         ].join("\n"),
       });
       return NextResponse.json({ ok: true });
     }
 
-    // Echo for now — will replace with LLM in Chunk 3
+    // Send "typing" indicator via a placeholder message
     await sendTelegram({
-      text: [
-        "⚙️ <b>Processing...</b>",
-        "",
-        `You said: <i>${escapeHtml(userText)}</i>`,
-        "",
-        "<i>LLM integration coming in next chunk.</i>",
-      ].join("\n"),
+      text: "<i>🤔 Thinking...</i>",
     });
+
+    try {
+      const response = await processUserMessage(userText);
+
+      console.log(
+        JSON.stringify({
+          timestamp: new Date().toISOString(),
+          event: "telegram_llm_response",
+          tools_called: response.toolsCalled,
+          response_length: response.text.length,
+        }),
+      );
+
+      await sendTelegram({ text: response.text });
+    } catch (llmError) {
+      console.error("[telegram webhook] LLM error:", llmError);
+      await sendTelegram({
+        text: "⚠️ <i>Something went wrong processing your request. Try again or rephrase.</i>",
+      });
+    }
 
     return NextResponse.json({ ok: true });
   } catch (e) {
     console.error("[telegram webhook] error:", e);
-    // Always return 200 to Telegram so it doesn't retry
     return NextResponse.json({ ok: true });
   }
-}
-
-function escapeHtml(text: string): string {
-  return text
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;");
 }
