@@ -10,6 +10,7 @@ declare module "next-auth" {
     role: UserRole;
     plotNumber: string | null;
     emailVerified: Date | null;
+    accountStatus: AccountStatus;
   }
 
   interface Session {
@@ -20,6 +21,7 @@ declare module "next-auth" {
       role: UserRole;
       plotNumber: string | null;
       emailVerified: Date | null;
+      accountStatus: AccountStatus;
     } & DefaultSession["user"];
   }
 }
@@ -30,5 +32,6 @@ declare module "next-auth/jwt" {
     role: UserRole;
     plotNumber: string | null;
     emailVerified: Date | null;
+    accountStatus: AccountStatus;
   }
 }

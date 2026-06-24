@@ -28,6 +28,7 @@ export interface AdminResidentRow {
   // Activity
   familyMemberCount: number;
   pendingRequestsCount: number;
+  accountStatus: "PENDING" | "APPROVED" | "SUSPENDED";
 }
 
 export interface AdminResidentsCounts {
@@ -35,6 +36,7 @@ export interface AdminResidentsCounts {
   claimed: number;
   unclaimed: number;
   unverified: number;
+  pending: number;
 }
 
 export interface AdminResidentsData {
@@ -56,6 +58,7 @@ export async function getAdminResidents(): Promise<AdminResidentsData> {
       email: true,
       emailVerified: true,
       plotNumber: true,
+      accountStatus: true,
       createdAt: true,
       updatedAt: true,
       villa: {
@@ -125,6 +128,7 @@ export async function getAdminResidents(): Promise<AdminResidentsData> {
 
       familyMemberCount: u._count.familyMembers,
       pendingRequestsCount: u._count.residentRequests,
+      accountStatus: u.accountStatus,
     };
   });
 
@@ -133,6 +137,7 @@ export async function getAdminResidents(): Promise<AdminResidentsData> {
     claimed: rows.filter((r) => r.isClaimed).length,
     unclaimed: rows.filter((r) => !r.isClaimed).length,
     unverified: rows.filter((r) => !r.emailVerified).length,
+    pending: rows.filter((r) => r.accountStatus === 'PENDING').length,
   };
 
   return { rows, counts };
@@ -188,6 +193,7 @@ export interface AdminResidentDetail {
   // Pending requests
   pendingRequestsCount: number;
   pendingPaymentRequestsCount: number;
+  accountStatus: 'PENDING' | 'APPROVED' | 'SUSPENDED';
 }
 
 export async function getAdminResidentDetail(
@@ -201,6 +207,7 @@ export async function getAdminResidentDetail(
       email: true,
       emailVerified: true,
       plotNumber: true,
+      accountStatus: true,
       createdAt: true,
       updatedAt: true,
 
@@ -334,6 +341,7 @@ export async function getAdminResidentDetail(
 
     pendingRequestsCount: user._count.residentRequests,
     pendingPaymentRequestsCount: user._count.paymentRequestsSubmitted,
+    accountStatus: user.accountStatus,
   };
 }
 

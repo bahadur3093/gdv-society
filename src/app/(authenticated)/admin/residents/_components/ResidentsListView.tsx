@@ -13,6 +13,7 @@ import {
   Users,
   Home,
   AlertTriangle,
+  Hourglass,
 } from "lucide-react";
 import Tabs, { type TabItem } from "@/components/molecules/Tabs";
 import Badge from "@/components/atoms/Badge";
@@ -28,7 +29,7 @@ import type {
 import { toast } from "@/components/atoms/Toast";
 import { cn, formatCurrency, formatRelativeTime } from "@/lib/utils/utils";
 
-type StatusFilter = "ALL" | "CLAIMED" | "UNCLAIMED" | "UNVERIFIED";
+type StatusFilter = "ALL" | "PENDING" | "CLAIMED" | "UNCLAIMED" | "UNVERIFIED";
 
 interface Props {
   rows: AdminResidentRow[];
@@ -45,6 +46,8 @@ export default function ResidentsListView({ rows, counts }: Props) {
   // ─── Filter rows ───
   const filtered = useMemo(() => {
     switch (filter) {
+      case "PENDING":
+        return rows.filter((r) => r.accountStatus === "PENDING");
       case "CLAIMED":
         return rows.filter((r) => r.isClaimed);
       case "UNCLAIMED":
@@ -92,6 +95,16 @@ export default function ResidentsListView({ rows, counts }: Props) {
       badge:
         counts.unverified > 0
           ? { label: String(counts.unverified), variant: "danger" }
+          : undefined,
+    },
+
+    {
+      key: "PENDING",
+      label: "Pending approval",
+      icon: <Hourglass />,
+      badge:
+        counts.pending > 0
+          ? { label: String(counts.pending), variant: "warning" }
           : undefined,
     },
   ];
@@ -238,6 +251,16 @@ export default function ResidentsListView({ rows, counts }: Props) {
         label: "Status",
         desktop: (r) => (
           <div className="flex flex-col gap-1 items-start">
+            {r.accountStatus === "PENDING" && (
+              <Badge size="sm" variant="warning" icon={<Hourglass />}>
+                Pending approval
+              </Badge>
+            )}
+            {r.accountStatus === "SUSPENDED" && (
+              <Badge size="sm" variant="danger">
+                Suspended
+              </Badge>
+            )}
             {r.isClaimed ? (
               <Badge size="sm" variant="success" icon={<CheckCircle2 />}>
                 Linked

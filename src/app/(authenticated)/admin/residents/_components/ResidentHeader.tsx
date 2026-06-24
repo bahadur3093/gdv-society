@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -10,8 +10,10 @@ import {
   CheckCircle2,
   AlertTriangle,
   Calendar,
+  UserX,
+  UserCheck,
 } from "lucide-react";
-import { resetResidentPasswordAction } from "../actions";
+import { approveResidentAction, reactivateResidentAction, resetResidentPasswordAction, suspendResidentAction } from "../actions";
 import type { AdminResidentDetail } from "@/lib/users/getAdminResidents";
 import { toast } from "@/components/atoms/Toast";
 import Card from "@/components/atoms/Card";
@@ -37,6 +39,9 @@ export default function ResidentHeader({ resident, availableVillas }: Props) {
   const [resetOpen, setResetOpen] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
 
+  const [isApproving, startApproveTransition] = useTransition();
+  const [isSuspending, startSuspendTransition] = useTransition();
+
   const handleResetPassword = async () => {
     setIsResetting(true);
     const result = await resetResidentPasswordAction(resident.id);
@@ -51,6 +56,42 @@ export default function ResidentHeader({ resident, availableVillas }: Props) {
     } else {
       toast.error(result.message ?? "Failed to generate reset link");
     }
+  };
+
+  const handleApprove = () => {
+    startApproveTransition(async () => {
+      const result = await approveResidentAction(resident.id);
+      if (result.status === "success") {
+        toast.success(result.message ?? "Approved");
+        router.refresh();
+      } else {
+        toast.error(result.message ?? "Failed to approve");
+      }
+    });
+  };
+
+  const handleSuspend = () => {
+    startSuspendTransition(async () => {
+      const result = await suspendResidentAction(resident.id);
+      if (result.status === "success") {
+        toast.success(result.message ?? "Suspended");
+        router.refresh();
+      } else {
+        toast.error(result.message ?? "Failed to suspend");
+      }
+    });
+  };
+
+  const handleReactivate = () => {
+    startSuspendTransition(async () => {
+      const result = await reactivateResidentAction(resident.id);
+      if (result.status === "success") {
+        toast.success(result.message ?? "Reactivated");
+        router.refresh();
+      } else {
+        toast.error(result.message ?? "Failed to reactivate");
+      }
+    });
   };
 
   return (
@@ -92,6 +133,13 @@ export default function ResidentHeader({ resident, availableVillas }: Props) {
 
               {/* Status badges */}
               <div className="flex flex-wrap items-center gap-2 mt-3">
+                {resident.accountStatus === "PENDING" && (
+                  <Badge variant="warning">Pending approval</Badge>
+                )}
+                {resident.accountStatus === "SUSPENDED" && (
+                  <Badge variant="danger">Suspended</Badge>
+                )}
+
                 {resident.villa ? (
                   <Badge variant="success" icon={<CheckCircle2 />}>
                     Villa {resident.villa.villaNo}
@@ -119,9 +167,44 @@ export default function ResidentHeader({ resident, availableVillas }: Props) {
                     {resident.pendingPaymentRequestsCount === 1 ? "" : "s"}
                   </Badge>
                 )}
+
+                {resident.accountStatus === "PENDING" && (
+                  <Button
+                    variant="primary"
+                    size="md"
+                    icon={<CheckCircle2 className="w-4 h-4" />}
+                    onClick={handleApprove}
+                    disabled={isApproving}
+                  >
+                    {isApproving ? "Approving…" : "Approve account"}
+                  </Button>
+                )}
+
+                {resident.accountStatus === "APPROVED" && (
+                  <Button
+                    variant="ghost"
+                    size="md"
+                    icon={<UserX className="w-4 h-4" />}
+                    onClick={handleSuspend}
+                    disabled={isSuspending}
+                  >
+                    {isSuspending ? "Suspending…" : "Suspend"}
+                  </Button>
+                )}
+
+                {resident.accountStatus === "SUSPENDED" && (
+                  <Button
+                    variant="primary"
+                    size="md"
+                    icon={<UserCheck className="w-4 h-4" />}
+                    onClick={handleReactivate}
+                    disabled={isSuspending}
+                  >
+                    {isSuspending ? "Reactivating…" : "Reactivate"}
+                  </Button>
+                )}
               </div>
 
-              {/* Meta */}
               <div
                 className={cn(
                   "flex items-center gap-1.5 mt-4",
@@ -173,7 +256,7 @@ export default function ResidentHeader({ resident, availableVillas }: Props) {
         open={editOpen}
         onOpenChange={setEditOpen}
         resident={resident}
-        availableVillas={availableVillas} 
+        availableVillas={availableVillas}
       />
 
       {/* Reset password confirmation */}

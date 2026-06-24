@@ -102,6 +102,10 @@ export default function AdminLayout({
       link: "/sandbox/test-expenses",
       title: "expenses",
     },
+    {
+      link: "/sandbox/auth-layout",
+      title: "Auth",
+    },
   ];
 
   return (

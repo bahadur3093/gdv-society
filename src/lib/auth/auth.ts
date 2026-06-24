@@ -1,16 +1,22 @@
+// src/lib/auth/auth.ts
+
 import NextAuth, { User } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { UserRole } from "@/types";
+import type { AccountStatus } from "@/lib/enums";
 import { cache } from "react";
 import { redirect } from "next/navigation";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
-  pages: { signIn: "/login" },
+  pages: {
+    signIn: "/auth/signin",
+    error: "/auth/error",
+  },
   providers: [
     Credentials({
       credentials: {
@@ -18,11 +24,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          console.log("❌ EARLY EXIT: missing email or password");
-          return null;
-        }
-
         if (!credentials?.email || !credentials?.password) return null;
 
         const user = await prisma.user.findUnique({
@@ -43,6 +44,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           role: user.role,
           plotNumber: user.plotNumber,
           emailVerified: user.emailVerified,
+          accountStatus: user.accountStatus,
         } as User;
       },
     }),
@@ -51,9 +53,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role;
-        token.plotNumber = user.plotNumber;
-        token.emailVerified = user.emailVerified;
+        token.role = (user as any).role;
+        token.plotNumber = (user as any).plotNumber;
+        token.emailVerified = (user as any).emailVerified;
+        token.accountStatus = (user as any).accountStatus;
         token.name = user.name;
       }
       return token;
@@ -64,6 +67,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as UserRole;
         session.user.plotNumber = token.plotNumber as string | null;
         session.user.emailVerified = (token.emailVerified as Date) || null;
+        session.user.accountStatus = token.accountStatus as AccountStatus;
         session.user.name = token.name || "";
       }
       return session;
@@ -80,33 +84,83 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
 });
 
+// ─────────────────────────────────────────────────────────────
+//  Helpers
+// ─────────────────────────────────────────────────────────────
+
 export const getCurrentUser = cache(async () => {
   const session = await auth();
   return session?.user ?? null;
 });
 
+/**
+ * Require an authenticated user. Doesn't check role or status.
+ * Useful for routes accessible to any signed-in user (e.g., /auth/verification-pending).
+ */
 export async function requireUser() {
   const user = await getCurrentUser();
   if (!user) redirect("/auth/signin");
   return user;
 }
 
-export async function requireResident() {
-  const user = await requireUser();
-
-  if (user.role !== "RESIDENT") {
-    redirect("/admin");
+/**
+ * Require an APPROVED user of any role. Used for shared
+ * authenticated routes that aren't role-specific.
+ */
+export async function requireApprovedUser() {
+  const session = await auth();
+  if (!session?.user?.email) {
+    redirect("/auth/signin");
   }
 
-  if (!user.emailVerified) {
+  const user = await prisma.user.findUnique({
+    where: { email: session.user.email },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      accountStatus: true,
+      plotNumber: true,
+    },
+  });
+
+  if (!user) redirect("/auth/signin");
+
+  if (user.accountStatus === "PENDING") {
     redirect("/auth/verification-pending");
+  }
+  if (user.accountStatus === "SUSPENDED") {
+    redirect("/auth/signin?error=suspended");
   }
 
   return user;
 }
 
+/**
+ * Require an APPROVED RESIDENT user.
+ * Pending → /auth/verification-pending
+ * Suspended → /auth/signin?error=suspended
+ * Wrong role → /admin/ledger
+ */
+export async function requireResident() {
+  const user = await requireApprovedUser();
+
+  if (user.role !== "RESIDENT") {
+    redirect("/admin/ledger");
+  }
+
+  return user;
+}
+
+/**
+ * Require an APPROVED ADMIN user.
+ * Pending → /auth/verification-pending
+ * Suspended → /auth/signin?error=suspended
+ * Wrong role → /resident
+ */
 export async function requireAdmin() {
-  const user = await requireUser();
+  const user = await requireApprovedUser();
 
   if (user.role !== "ADMIN") {
     redirect("/resident");

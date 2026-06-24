@@ -1,3 +1,5 @@
+export type AccountStatus = 'PENDING' | 'APPROVED' | 'SUSPENDED';
+
 export type PaymentRequestStatus =
   | 'PENDING'
   | 'APPROVED'

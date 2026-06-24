@@ -1,26 +1,14 @@
-import { redirect } from "next/navigation";
-import { Suspense } from "react";
-import { Loader2 } from "lucide-react";
-import { auth } from "@/lib/auth/auth";
-import { getLandingPath } from "@/lib/auth/redirect";
-import SignInForm from "@/components/templates/SignInForm";
+import AuthLayout from "@/components/auth/AuthLayout";
+import SigninForm from "./_components/SigninForm";
 
-export default async function SignInPage() {
-  const session = await auth();
+export const metadata = {
+  title: "Sign in — GDV Society Hub",
+};
 
-  if (session?.user) {
-    redirect(getLandingPath(session));
-  }
-
+export default function SigninPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-          <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
-        </div>
-      }
-    >
-      <SignInForm />
-    </Suspense>
+    <AuthLayout tagline="Maintenance made simple for modern residential communities.">
+      <SigninForm />
+    </AuthLayout>
   );
 }

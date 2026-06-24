@@ -260,3 +260,199 @@ function generateToken(length: number): string {
   }
   return token;
 }
+
+export interface AccountStatusActionResult {
+  status: "success" | "error";
+  message?: string;
+}
+
+/**
+ * Approve a pending resident's account.
+ * Pending → Approved
+ */
+export async function approveResidentAction(
+  userId: string,
+): Promise<AccountStatusActionResult> {
+  try {
+    await requireAdmin();
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        role: true,
+        accountStatus: true,
+      },
+    });
+
+    if (!user) {
+      return { status: "error", message: "User not found" };
+    }
+
+    if (user.role !== "RESIDENT") {
+      return {
+        status: "error",
+        message: "Only resident accounts can be approved here",
+      };
+    }
+
+    if (user.accountStatus === "APPROVED") {
+      return {
+        status: "error",
+        message: "Account is already approved",
+      };
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: {
+        accountStatus: "APPROVED",
+        // Also mark email as verified since admin vouched for them
+        emailVerified:
+          user.accountStatus === "PENDING" ? new Date() : undefined,
+      },
+    });
+
+    // Audit log
+    console.log(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        event: "admin_approve_resident",
+        userId,
+        email: user.email,
+        previousStatus: user.accountStatus,
+      }),
+    );
+
+    revalidatePath("/admin/residents");
+    revalidatePath(`/admin/residents/${userId}`);
+
+    return {
+      status: "success",
+      message: `${user.name} has been approved`,
+    };
+  } catch (e) {
+    console.error("[approveResidentAction] failed", e);
+    return {
+      status: "error",
+      message: e instanceof Error ? e.message : "Failed to approve",
+    };
+  }
+}
+
+/**
+ * Suspend an approved resident's account.
+ * Approved → Suspended
+ */
+export async function suspendResidentAction(
+  userId: string,
+  reason?: string,
+): Promise<AccountStatusActionResult> {
+  try {
+    await requireAdmin();
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, accountStatus: true },
+    });
+
+    if (!user) {
+      return { status: "error", message: "User not found" };
+    }
+
+    if (user.accountStatus === "SUSPENDED") {
+      return {
+        status: "error",
+        message: "Account is already suspended",
+      };
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { accountStatus: "SUSPENDED" },
+    });
+
+    console.log(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        event: "admin_suspend_resident",
+        userId,
+        email: user.email,
+        previousStatus: user.accountStatus,
+        reason: reason ?? "not provided",
+      }),
+    );
+
+    revalidatePath("/admin/residents");
+    revalidatePath(`/admin/residents/${userId}`);
+
+    return {
+      status: "success",
+      message: `${user.name} has been suspended`,
+    };
+  } catch (e) {
+    console.error("[suspendResidentAction] failed", e);
+    return {
+      status: "error",
+      message: e instanceof Error ? e.message : "Failed to suspend",
+    };
+  }
+}
+
+/**
+ * Reactivate a suspended resident's account.
+ * Suspended → Approved
+ */
+export async function reactivateResidentAction(
+  userId: string,
+): Promise<AccountStatusActionResult> {
+  try {
+    await requireAdmin();
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true, name: true, email: true, accountStatus: true },
+    });
+
+    if (!user) {
+      return { status: "error", message: "User not found" };
+    }
+
+    if (user.accountStatus !== "SUSPENDED") {
+      return {
+        status: "error",
+        message: "Only suspended accounts can be reactivated",
+      };
+    }
+
+    await prisma.user.update({
+      where: { id: userId },
+      data: { accountStatus: "APPROVED" },
+    });
+
+    console.log(
+      JSON.stringify({
+        timestamp: new Date().toISOString(),
+        event: "admin_reactivate_resident",
+        userId,
+        email: user.email,
+      }),
+    );
+
+    revalidatePath("/admin/residents");
+    revalidatePath(`/admin/residents/${userId}`);
+
+    return {
+      status: "success",
+      message: `${user.name} has been reactivated`,
+    };
+  } catch (e) {
+    console.error("[reactivateResidentAction] failed", e);
+    return {
+      status: "error",
+      message: e instanceof Error ? e.message : "Failed to reactivate",
+    };
+  }
+}

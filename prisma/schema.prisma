@@ -12,6 +12,7 @@ model User {
   password              String?
   name                  String
   role                  UserRole               @default(RESIDENT)
+  accountStatus         AccountStatus          @default(PENDING)
   emailVerified         DateTime?
   plotNumber            String?
   createdAt             DateTime               @default(now())
@@ -444,4 +445,10 @@ enum PaymentRequestStatus {
   APPROVED
   REJECTED
   CANCELLED
+}
+
+enum AccountStatus {
+  PENDING
+  APPROVED
+  SUSPENDED
 }
