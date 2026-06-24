@@ -17,8 +17,11 @@ export default async function AuthenticatedLayout({
     redirect("/auth/signin");
   }
 
-  if (session.user.role !== "ADMIN" && !session.user.emailVerified) {
+  if (session.user.accountStatus === "PENDING") {
     redirect("/auth/verification-pending");
+  }
+  if (session.user.accountStatus === "SUSPENDED") {
+    redirect("/auth/signin?error=suspended");
   }
 
   const plotNumberInt =

@@ -116,9 +116,13 @@ export default function PendingPageClient({ userEmail, userName }: Props) {
         </div>
 
         {/* Action links */}
-        <div className="space-y-4">
+        {/* <div className="space-y-4">
           <a
-            href={`societyadmin@gdvsociety.com?subject=Account%20Approval%20Request&body=Hi%2C%0A%0AMy%20account%20%28${encodeURIComponent(userEmail)}%29%20is%20pending%20approval.%20Could%20you%20please%20review%20it%3F%0A%0AThanks%21`}
+            href={`https://wa.me/91XXXXXXXXXX?text=${encodeURIComponent(
+              `Hi! I just signed up for GDV Society Hub.\n\nMy account (${userEmail}) is pending approval.\n\nName: ${userName}\n\nCould you please review and activate it? Thanks!`,
+            )}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className={cn(
               "inline-flex items-center gap-2",
               "text-body font-medium text-brand-primary",
@@ -128,7 +132,7 @@ export default function PendingPageClient({ userEmail, userName }: Props) {
             )}
           >
             <MessageCircle className="w-4 h-4" />
-            <span>Need this approved faster?</span>
+            <span>Message admin on WhatsApp</span>
             <ArrowRight className="w-4 h-4" />
           </a>
 
@@ -150,7 +154,7 @@ export default function PendingPageClient({ userEmail, userName }: Props) {
               <span>{isSigningOut ? "Signing out…" : "Sign out"}</span>
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
     </AuthLayout>
   );

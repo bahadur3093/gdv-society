@@ -57,8 +57,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.plotNumber = (user as any).plotNumber;
         token.emailVerified = (user as any).emailVerified;
         token.accountStatus = (user as any).accountStatus;
+        token.email = user.email;
         token.name = user.name;
+        return token;
       }
+
+      if (token.email) {
+        try {
+          const freshUser = await prisma.user.findUnique({
+            where: { email: token.email as string },
+            select: { accountStatus: true, role: true },
+          });
+
+          if (freshUser) {
+            return {
+              ...token,
+              accountStatus: freshUser.accountStatus,
+              role: freshUser.role,
+            };
+          }
+        } catch (e) {
+          console.error("[jwt callback] DB refresh failed:", e);
+        }
+      }
+
       return token;
     },
     async session({ session, token }) {

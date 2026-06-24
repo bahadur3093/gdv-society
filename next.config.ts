@@ -1,28 +1,28 @@
-import withPWA from '@ducanh2912/next-pwa';
+import withPWA from "@ducanh2912/next-pwa";
 
 const pwaConfig = withPWA({
-  dest: 'public',
+  dest: "public",
   cacheOnFrontEndNav: true,
   aggressiveFrontEndNavCaching: true,
   reloadOnOnline: true,
-  disable: process.env.NODE_ENV === 'development',
+  disable: process.env.NODE_ENV === "development",
   workboxOptions: {
     disableDevLogs: true,
     runtimeCaching: [
       // Auth API — NEVER cache, always network
       {
         urlPattern: /\/api\/auth\/.*/i,
-        handler: 'NetworkOnly',
+        handler: "NetworkOnly",
         options: {
-          cacheName: 'auth-never-cached',
+          cacheName: "auth-never-cached",
         },
       },
       // All other API routes
       {
         urlPattern: /\/api\/.*/i,
-        handler: 'NetworkFirst',
+        handler: "NetworkFirst",
         options: {
-          cacheName: 'apis',
+          cacheName: "apis",
           networkTimeoutSeconds: 10,
           expiration: {
             maxEntries: 16,
@@ -33,9 +33,9 @@ const pwaConfig = withPWA({
       // Pages
       {
         urlPattern: /^https?.*/,
-        handler: 'NetworkFirst',
+        handler: "NetworkFirst",
         options: {
-          cacheName: 'others',
+          cacheName: "others",
           expiration: {
             maxEntries: 32,
             maxAgeSeconds: 24 * 60 * 60,

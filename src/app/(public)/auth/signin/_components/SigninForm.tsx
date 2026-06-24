@@ -20,7 +20,6 @@ export default function SigninForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [remember, setRemember] = useState(true);
 
   // Handle action result
   useEffect(() => {
@@ -42,7 +41,6 @@ export default function SigninForm() {
     const formData = new FormData();
     formData.set("email", email);
     formData.set("password", password);
-    if (remember) formData.set("remember", "on");
     startTransition(() => formAction(formData));
   };
 
@@ -176,25 +174,6 @@ export default function SigninForm() {
             </button>
           </div>
         </FormField>
-
-        {/* Remember me */}
-        <label className="flex items-center gap-2.5 cursor-pointer select-none">
-          <input
-            type="checkbox"
-            name="remember"
-            checked={remember}
-            onChange={(e) => setRemember(e.target.checked)}
-            className={cn(
-              "w-4 h-4 rounded",
-              "bg-bg-sunken border-border-default text-brand-primary",
-              "focus:ring-brand-primary/30 focus:ring-offset-bg-base",
-              "cursor-pointer",
-            )}
-          />
-          <span className="text-body-sm text-text-secondary">
-            Remember me for 30 days
-          </span>
-        </label>
 
         {/* Submit button */}
         <button

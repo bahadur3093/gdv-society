@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { hash } from "bcryptjs";
 import { validatePassword } from "@/lib/auth/common-passwords";
 import { checkRateLimit, recordFailedAttempt } from "@/lib/auth/rate-limit";
+import { notifyAdminOfSignup } from "@/lib/email/notify-admins";
 
 export interface SignupState {
   status: "idle" | "success" | "error";
@@ -227,6 +228,15 @@ export async function signupAction(
       ip,
       userId: newUser.id,
       plotNumber,
+    });
+
+    notifyAdminOfSignup({
+      newUserName: name,
+      newUserEmail: newUser.email,
+      newUserPlotNumber: plotNumber,
+      newUserId: newUser.id,
+    }).catch((err) => {
+      console.error("[signupAction] Notification failed:", err);
     });
 
     // ─── Auto sign-in (sets session) ───
