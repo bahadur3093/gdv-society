@@ -3,6 +3,7 @@ import "server-only";
 interface SendTelegramOptions {
   text: string;
   buttons?: Array<{ text: string; url: string }>;
+  chatId?: string;
 }
 
 interface SendTelegramResult {
@@ -14,7 +15,7 @@ export async function sendTelegram(
   options: SendTelegramOptions,
 ): Promise<SendTelegramResult> {
   const botToken = process.env.TELEGRAM_BOT_TOKEN;
-  const chatId = process.env.TELEGRAM_ADMIN_CHAT_ID;
+  const chatId = options.chatId ?? process.env.TELEGRAM_ADMIN_CHAT_ID;
 
   if (!botToken || !chatId) {
     console.warn(
