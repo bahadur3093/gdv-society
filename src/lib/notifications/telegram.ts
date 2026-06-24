@@ -27,7 +27,7 @@ export async function sendTelegram(
     const body: Record<string, unknown> = {
       chat_id: chatId,
       text: options.text,
-      parse_mode: "Markdown",
+      parse_mode: "HTML",
       disable_web_page_preview: true,
     };
 

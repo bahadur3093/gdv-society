@@ -88,21 +88,28 @@ export async function notifyAdminOfSignup(
       );
     }
 
-    const telegramText = `🆕 *New Signup*
-                            *Name:* ${options.newUserName}
-                            *Email:* ${options.newUserEmail}
-                            *Plot:* ${options.newUserPlotNumber ?? "Not provided"}
-
-                            Tap below to review and approve.`;
-
     const isProduction =
       process.env.NODE_ENV === "production" &&
       !approveUrl.includes("localhost");
 
+    const telegramText = [
+      "🔔 <b>New Resident Signup</b>",
+      "<i>Awaiting your approval</i>",
+      "",
+      "━━━━━━━━━━━━━━━━━━",
+      "",
+      `👤 <b>${options.newUserName}</b>`,
+      `✉️ <code>${options.newUserEmail}</code>`,
+      `🏠 Plot <b>${options.newUserPlotNumber ?? "—"}</b>`,
+      "",
+      "━━━━━━━━━━━━━━━━━━",
+      isProduction ? "" : `\n🔗 <a href="${approveUrl}">Open admin panel</a>`,
+    ].join("\n");
+
     const telegramResult = await sendTelegram({
-      text: telegramText + (isProduction ? "" : `\n\n*Link:* ${approveUrl}`),
+      text: telegramText,
       buttons: isProduction
-        ? [{ text: "✓ Review & Approve", url: approveUrl }]
+        ? [{ text: "✅ Review & Approve →", url: approveUrl }]
         : undefined,
     });
 
