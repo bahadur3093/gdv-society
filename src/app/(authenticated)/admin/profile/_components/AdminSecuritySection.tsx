@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import {
   Lock,
   KeyRound,
@@ -10,14 +9,11 @@ import {
   AlertTriangle,
   ChevronRight,
 } from "lucide-react";
-import { requestAdminPasswordResetAction } from "../actions";
-import { toast } from "@/components/atoms/Toast";
 import Section from "@/components/organisms/Section";
 import Card from "@/components/atoms/Card";
 import { cn } from "@/lib/utils/utils";
 import Badge from "@/components/atoms/Badge";
-import Modal from "@/components/molecules/Modal";
-import Button from "@/components/atoms/Button";
+import ChangePasswordSheet from "@/components/auth/ChangePasswordSheet";
 
 interface Admin {
   email: string;
@@ -29,25 +25,7 @@ interface Props {
 }
 
 export default function AdminSecuritySection({ admin }: Props) {
-  const router = useRouter();
-  const [resetOpen, setResetOpen] = useState(false);
-  const [isResetting, setIsResetting] = useState(false);
-
-  const handleResetPassword = async () => {
-    setIsResetting(true);
-    const result = await requestAdminPasswordResetAction();
-    setIsResetting(false);
-
-    if (result.status === "success") {
-      toast.success("Password reset ready", {
-        description: result.message,
-      });
-      setResetOpen(false);
-      router.refresh();
-    } else {
-      toast.error(result.message ?? "Failed to generate reset link");
-    }
-  };
+  const [changeOpen, setChangeOpen] = useState(false);
 
   return (
     <>
@@ -90,7 +68,7 @@ export default function AdminSecuritySection({ admin }: Props) {
             {/* Change password */}
             <button
               type="button"
-              onClick={() => setResetOpen(true)}
+              onClick={() => setChangeOpen(true)}
               className={cn(
                 "w-full flex items-center gap-3",
                 "px-3 py-3 -mx-1 rounded-md",
@@ -108,7 +86,7 @@ export default function AdminSecuritySection({ admin }: Props) {
                   Change password
                 </p>
                 <p className="text-body-sm text-text-muted truncate">
-                  Generate a reset link (valid 24 hours)
+                  Update your account password
                 </p>
               </div>
               <ChevronRight className="w-4 h-4 text-text-muted shrink-0" />
@@ -117,33 +95,7 @@ export default function AdminSecuritySection({ admin }: Props) {
         </Card>
       </Section>
 
-      {/* Reset confirmation modal */}
-      <Modal
-        open={resetOpen}
-        onOpenChange={(open) => !open && !isResetting && setResetOpen(false)}
-        title="Generate password reset link?"
-        description="A new reset link will be created that you can use within 24 hours."
-        size="sm"
-        footer={
-          <>
-            <Button
-              variant="ghost"
-              onClick={() => setResetOpen(false)}
-              disabled={isResetting}
-            >
-              Cancel
-            </Button>
-            <Button
-              variant="primary"
-              icon={<KeyRound />}
-              onClick={handleResetPassword}
-              disabled={isResetting}
-            >
-              {isResetting ? "Generating…" : "Generate link"}
-            </Button>
-          </>
-        }
-      />
+      <ChangePasswordSheet open={changeOpen} onOpenChange={setChangeOpen} />
     </>
   );
 }

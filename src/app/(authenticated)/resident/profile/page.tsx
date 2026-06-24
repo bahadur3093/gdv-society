@@ -9,6 +9,7 @@ import ProfileVillaCard from "./_components/ProfileVillaCard";
 import ProfileInfoCard from "./_components/ProfileInfoCard";
 import FamilyMembersSection from "./_components/FamilyMembersSection";
 import AccountSection from "./_components/AccountSection";
+import SecuritySection from "./_components/SecuritySection";
 
 export const dynamic = "force-dynamic";
 
@@ -43,6 +44,8 @@ export default async function ResidentProfilePage() {
       <ProfileVillaCard villa={profile.villa} />
 
       <FamilyMembersSection members={profile.familyMembers} />
+
+      <SecuritySection />
 
       <AccountSection email={profile.user.email} />
     </div>
