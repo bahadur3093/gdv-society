@@ -100,8 +100,7 @@ export async function POST(request: Request) {
         username: verified.username,
       },
     });
-  } catch (e) {
-    console.error('[telegram dashboard-data] error:', e);
+  } catch {
     return NextResponse.json({ error: 'Internal error' }, { status: 500 });
   }
 }
