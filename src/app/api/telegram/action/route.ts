@@ -22,7 +22,7 @@ interface ActionRequest {
   initData: string;
   action: Action;
   targetId: string;
-  reason?: string; // for reject_payment
+  reason?: string;
 }
 
 export async function POST(request: Request) {
