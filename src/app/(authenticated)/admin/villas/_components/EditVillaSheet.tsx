@@ -8,7 +8,6 @@ import {
   Hash,
   User as UserIcon,
   Ruler,
-  Home,
   FileText,
 } from "lucide-react";
 import {
