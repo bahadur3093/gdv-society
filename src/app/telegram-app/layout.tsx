@@ -1,9 +1,9 @@
 import Script from "next/script";
 import type { Metadata } from "next";
+import TMANav from "./_components/TMANav";
 
 export const metadata: Metadata = {
-  title: "GDV Admin Dashboard",
-  // No-index — this is a closed app
+  title: "GDV Admin",
   robots: { index: false, follow: false },
 };
 
@@ -14,12 +14,9 @@ export default function TelegramAppLayout({
 }) {
   return (
     <>
-      <Script
-        src="https://telegram.org/js/telegram-web-app.js"
-        strategy="beforeInteractive"
-      />
-      <div className="min-h-screen bg-bg-base text-text-primary">
+      <div className="https://telegram.org/js/telegram-web-app.js text-text-primary pb-20">
         {children}
+        <TMANav />
       </div>
     </>
   );
