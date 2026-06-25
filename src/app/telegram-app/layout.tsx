@@ -14,6 +14,10 @@ export default function TelegramAppLayout({
 }) {
   return (
     <>
+      <Script
+        src="https://telegram.org/js/telegram-web-app.js"
+        strategy="beforeInteractive"
+      />
       <div className="https://telegram.org/js/telegram-web-app.js text-text-primary pb-20">
         {children}
         <TMANav />
