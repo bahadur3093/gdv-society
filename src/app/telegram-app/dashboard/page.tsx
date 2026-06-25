@@ -35,28 +35,6 @@ interface DashboardData {
   };
 }
 
-// Telegram WebApp types
-interface TelegramWebApp {
-  initData: string;
-  ready: () => void;
-  expand: () => void;
-  colorScheme: "light" | "dark";
-  themeParams: Record<string, string>;
-  enableClosingConfirmation: () => void;
-  HapticFeedback?: {
-    impactOccurred: (style: "light" | "medium" | "heavy") => void;
-    notificationOccurred: (type: "error" | "success" | "warning") => void;
-  };
-}
-
-declare global {
-  interface Window {
-    Telegram?: {
-      WebApp?: TelegramWebApp;
-    };
-  }
-}
-
 export default function TelegramDashboardPage() {
   const [data, setData] = useState<DashboardData | null>(null);
   const [loading, setLoading] = useState(true);
