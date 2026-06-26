@@ -1,12 +1,12 @@
 import "server-only";
-import Groq from "groq-sdk";
-import { getToolDefinitions, executeTool } from "./tools";
-
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY,
-});
-
-const MODEL = process.env.GROQ_MODEL ?? "llama-3.3-70b-versatile";
+import {
+  generateText,
+  stepCountIs,
+  NoSuchToolError,
+  InvalidToolInputError,
+} from "ai";
+import { telegramModel } from "./ai-provider";
+import { telegramTools } from "./tools";
 
 const SYSTEM_PROMPT = `You are a helpful assistant for the GDV Society Hub admin.
 
@@ -42,79 +42,49 @@ interface LLMResponse {
 export async function processUserMessage(
   userMessage: string,
 ): Promise<LLMResponse> {
-  const tools = getToolDefinitions();
   const toolsCalled: string[] = [];
 
-  const messages: Groq.Chat.Completions.ChatCompletionMessageParam[] = [
-    { role: "system", content: SYSTEM_PROMPT },
-    { role: "user", content: userMessage },
-  ];
-
-  // Allow up to 3 rounds of tool calling
-  for (let round = 0; round < 5; round++) {
-    const completion = await groq.chat.completions.create({
-      model: MODEL,
-      messages,
-      tools,
-      tool_choice: "auto",
+  try {
+    const { text, steps } = await generateText({
+      model: telegramModel,
+      system: SYSTEM_PROMPT,
+      prompt: userMessage,
+      tools: telegramTools,
+      stopWhen: stepCountIs(5),
       temperature: 0.3,
-      max_tokens: 1024,
+      onStepFinish: ({ toolCalls }) => {
+        for (const call of toolCalls) {
+          toolsCalled.push(call.toolName);
+        }
+      },
     });
 
-    const choice = completion.choices[0];
-    if (!choice) {
+    const finalText = text?.trim();
+    if (!finalText) {
       return {
-        text: "⚠️ <i>No response from model. Try rephrasing.</i>",
+        text: "⚠️ <i>Empty response. Try rephrasing.</i>",
         toolsCalled,
       };
     }
 
-    const message = choice.message;
-
-    // No more tool calls → return final text
-    if (!message.tool_calls || message.tool_calls.length === 0) {
+    return { text: finalText, toolsCalled };
+  } catch (err) {
+    if (NoSuchToolError.isInstance(err)) {
       return {
-        text: message.content?.trim() || "⚠️ <i>Empty response.</i>",
+        text: "⚠️ <i>Model tried to use an unknown tool. Try rephrasing.</i>",
         toolsCalled,
       };
     }
-
-    // Add assistant message with tool calls to conversation
-    messages.push({
-      role: "assistant",
-      content: message.content ?? "",
-      tool_calls: message.tool_calls,
-    });
-
-    // Execute each tool call
-    for (const toolCall of message.tool_calls) {
-      if (toolCall.type !== "function") continue;
-
-      const name = toolCall.function.name;
-      let args: Record<string, unknown> = {};
-
-      try {
-        args = JSON.parse(toolCall.function.arguments || "{}");
-      } catch {
-        // Malformed args from model
-      }
-
-      const result = await executeTool(name, args);
-      toolsCalled.push(name);
-
-      messages.push({
-        role: "tool",
-        tool_call_id: toolCall.id,
-        content: result.success
-          ? result.data
-          : `Error: ${result.error ?? "Unknown error"}`,
-      });
+    if (InvalidToolInputError.isInstance(err)) {
+      return {
+        text: "⚠️ <i>Invalid input to a tool. Try rephrasing.</i>",
+        toolsCalled,
+      };
     }
+    console.error("[telegram-llm] error:", err);
+    return {
+      text: "⚠️ <i>Something went wrong processing your message.</i>",
+      toolsCalled,
+    };
   }
-
-  // Exhausted rounds
-  return {
-    text: "⚠️ <i>Reached max processing rounds without final answer. Try a simpler question.</i>",
-    toolsCalled,
-  };
 }
