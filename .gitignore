@@ -157,3 +157,4 @@ local.config.*
 tmp/
 temp/
 /src/generated/prisma
+.env*
