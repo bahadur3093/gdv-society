@@ -45,7 +45,7 @@ export async function processUserMessage(
   const toolsCalled: string[] = [];
 
   try {
-    const { text } = await generateText({
+    const { text, finishReason, toolCalls, toolResults, usage } = await generateText({
       model: telegramModel,
       system: SYSTEM_PROMPT,
       prompt: userMessage,
@@ -57,6 +57,14 @@ export async function processUserMessage(
           toolsCalled.push(call.toolName);
         }
       },
+    });
+
+    console.log("[LLM] result:", {
+      text: text,
+      finishReason: finishReason,
+      toolCalls: toolCalls?.length,
+      toolResults: toolResults?.length,
+      usage: usage,
     });
 
     const finalText = text?.trim();
