@@ -5,7 +5,7 @@ import {
   NoSuchToolError,
   InvalidToolInputError,
 } from "ai";
-import { telegramModel } from "./ai-provider";
+import { MODEL, openrouter } from "./ai-provider";
 import { telegramTools } from "./tools";
 
 const SYSTEM_PROMPT = `You are a helpful assistant for the GDV Society Hub admin.
@@ -45,8 +45,8 @@ export async function processUserMessage(
   const toolsCalled: string[] = [];
 
   try {
-    const { text, finishReason, toolCalls, toolResults, usage } = await generateText({
-      model: telegramModel,
+    const { text } = await generateText({
+      model: openrouter(MODEL),
       system: SYSTEM_PROMPT,
       prompt: userMessage,
       tools: telegramTools,
@@ -57,14 +57,6 @@ export async function processUserMessage(
           toolsCalled.push(call.toolName);
         }
       },
-    });
-
-    console.log("[LLM] result:", {
-      text: text,
-      finishReason: finishReason,
-      toolCalls: toolCalls?.length,
-      toolResults: toolResults?.length,
-      usage: usage,
     });
 
     const finalText = text?.trim();
