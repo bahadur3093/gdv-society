@@ -46,7 +46,7 @@ export async function processUserMessage(
 
   try {
     const { text } = await generateText({
-      model: openrouter(MODEL),
+      model: openrouter.chat(MODEL),
       system: SYSTEM_PROMPT,
       prompt: userMessage,
       tools: telegramTools,
