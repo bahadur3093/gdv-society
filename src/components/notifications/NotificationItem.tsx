@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import { markNotificationReadAction } from "@/lib/notifications/actions";
-import DOMPurify from 'dompurify';
+import DOMPurify from "dompurify";
 
 interface Notification {
   id: string;
@@ -74,7 +74,7 @@ export default function NotificationItem({
         type="button"
         onClick={handleClick}
         className={cn(
-          "w-full flex items-start gap-3 p-4 text-left",
+          "w-full flex items-start gap-3 p-3 sm:py-2.5 text-left",
           "hover:bg-bg-sunken/50 transition-colors",
           "focus-visible:outline-none focus-visible:bg-bg-sunken",
           !notification.isRead && "bg-brand-primary/5",
@@ -82,11 +82,11 @@ export default function NotificationItem({
       >
         <div
           className={cn(
-            "shrink-0 w-9 h-9 rounded-full flex items-center justify-center",
+            "shrink-0 w-9 h-9 sm:w-8 sm:h-8 rounded-full flex items-center justify-center",
             colorClass,
           )}
         >
-          <Icon className="w-4 h-4" />
+          <Icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />
         </div>
 
         <div className="flex-1 min-w-0">
@@ -105,7 +105,11 @@ export default function NotificationItem({
           </div>
           {notification.body && (
             <div className="text-body-sm text-text-muted line-clamp-2 mt-0.5">
-              <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(notification.body) }} />
+              <div
+                dangerouslySetInnerHTML={{
+                  __html: DOMPurify.sanitize(notification.body),
+                }}
+              />
             </div>
           )}
           <p className="text-micro text-text-muted mt-1">
