@@ -2,6 +2,7 @@ import "server-only";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { recordPayment } from "@/lib/billing/recordPayment";
+import { createNotification } from "../notifications/create";
 
 export interface PaymentActionResult {
   status: "success" | "error";
@@ -62,6 +63,14 @@ export async function approvePaymentRequestCore(
         reviewedBy: adminId,
         paymentId: result.paymentId,
       },
+    });
+
+    await createNotification({
+      userId: request.userId,
+      category: "PAYMENT",
+      title: "Payment approved ✓",
+      body: `Your ₹${request.amount.toLocaleString("en-IN")} payment has been recorded.`,
+      link: "/resident/ledger",
     });
 
     revalidatePath("/admin/payments");
@@ -157,6 +166,14 @@ export async function rejectPaymentRequestCore(
         reviewedBy: adminId,
         reviewNotes: reason.trim(),
       },
+    });
+
+    await createNotification({
+      userId: request.userId,
+      category: "PAYMENT",
+      title: "Payment request rejected",
+      body: reason.trim().slice(0, 200),
+      link: "/resident/pay",
     });
 
     revalidatePath("/admin/payments");

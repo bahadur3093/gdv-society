@@ -20,6 +20,7 @@ import { cn, isActiveRoute } from "@/lib/utils/utils";
 import IconButton from "@/components/atoms/IconButton";
 import UserMenu from "@/components/navigation/UserMenu";
 import PullToRefresh from "@/components/organisms/PullToRefresh";
+import NotificationButton from "@/components/notifications/NotificationButton";
 
 interface ResidentShellProps {
   userName: string;
@@ -48,7 +49,7 @@ const NAV_ITEMS: TabItem[] = [
   {
     key: "finances",
     href: "/resident/expenses",
-    icon: <TrendingDown />,
+    icon: <TrendingDown className="w-full h-full" />,
     label: "Finances",
   },
 
@@ -140,9 +141,10 @@ export default function ResidentShell({
             />
             {/* Desktop avatar */}
 
+            <NotificationButton />
             <UserMenu
               name={userName}
-              email={userEmail ?? ""} // ← if userEmail not passed, you'll need to pass it from layout
+              email={userEmail ?? ""}
               role="RESIDENT"
               profileHref="/resident/profile"
               avatarSize="md"

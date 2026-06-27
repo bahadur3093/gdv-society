@@ -1,5 +1,6 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
+import { createNotification } from "../notifications/create";
 
 export interface ActionResult {
   status: "success" | "error";
@@ -50,6 +51,14 @@ export async function approveResidentCore(
         emailVerified:
           user.accountStatus === "PENDING" ? new Date() : undefined,
       },
+    });
+
+    await createNotification({
+      userId,
+      category: "SYSTEM",
+      title: "🎉 Welcome to GDV Society Hub",
+      body: "Your account has been approved. You can now access all features.",
+      link: "/resident",
     });
 
     console.log(

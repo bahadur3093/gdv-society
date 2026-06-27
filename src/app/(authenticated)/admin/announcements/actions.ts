@@ -3,6 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
+import {
+  createBulkNotifications,
+  getAllApprovedResidentIds,
+} from "@/lib/notifications/create";
+import { convert } from "html-to-text";
 
 // ─────────────────────────────────────────────────────────────
 //  Types
@@ -123,6 +128,16 @@ export async function createAnnouncementAction(
         isActive: data.isActive,
       },
     });
+
+    if (created.isActive) {
+      const residentIds = await getAllApprovedResidentIds();
+      await createBulkNotifications(residentIds, {
+        category: "ANNOUNCEMENT",
+        title: `📣 ${created.title}`,
+        body: stripTipTapHtml(created.content),
+        link: `/resident/announcements/${created.id}`,
+      });
+    }
 
     revalidatePath("/admin/announcements");
     revalidatePath("/resident");
@@ -285,4 +300,18 @@ export async function deleteAnnouncementAction(
       message: e instanceof Error ? e.message : "Failed to delete",
     };
   }
+}
+
+function stripTipTapHtml(html: string): string {
+  return html
+    .replace(/<\/?[^>]+(>|$)/g, " ") // strip all tags
+    .replace(/&nbsp;/g, " ")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&apos;/g, "'")
+    .replace(/\s+/g, " ")
+    .trim();
 }

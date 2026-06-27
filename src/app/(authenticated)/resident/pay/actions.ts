@@ -1,20 +1,21 @@
-'use server';
+"use server";
 
-import { revalidatePath } from 'next/cache';
-import { redirect } from 'next/navigation';
-import { PaymentMethod } from '@prisma/client';
-import { prisma } from '@/lib/prisma';
-import { requireResident } from '@/lib/auth/auth';
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import { PaymentMethod } from "@prisma/client";
+import { prisma } from "@/lib/prisma";
+import { requireResident } from "@/lib/auth/auth";
+import { createBulkNotifications, getAllAdminIds } from "@/lib/notifications/create";
 
 export interface SubmitPaymentRequestState {
-  status: 'idle' | 'success' | 'error';
+  status: "idle" | "success" | "error";
   message?: string;
   requestId?: string;
 }
 
 export async function submitPaymentRequestAction(
   _prev: SubmitPaymentRequestState,
-  formData: FormData
+  formData: FormData,
 ): Promise<SubmitPaymentRequestState> {
   try {
     const user = await requireResident();
@@ -27,28 +28,29 @@ export async function submitPaymentRequestAction(
 
     if (!villa) {
       return {
-        status: 'error',
-        message: 'No villa is linked to your account. Contact the society admin.',
+        status: "error",
+        message:
+          "No villa is linked to your account. Contact the society admin.",
       };
     }
 
     // Parse + validate
-    const amount = parseFloat(formData.get('amount') as string);
-    const method = formData.get('method') as PaymentMethod;
-    const reference = (formData.get('reference') as string)?.trim() || null;
-    const notes = (formData.get('notes') as string)?.trim() || null;
-    const submittedAtRaw = formData.get('submittedAt') as string;
+    const amount = parseFloat(formData.get("amount") as string);
+    const method = formData.get("method") as PaymentMethod;
+    const reference = (formData.get("reference") as string)?.trim() || null;
+    const notes = (formData.get("notes") as string)?.trim() || null;
+    const submittedAtRaw = formData.get("submittedAt") as string;
 
     if (isNaN(amount) || amount <= 0) {
-      return { status: 'error', message: 'Amount must be greater than zero' };
+      return { status: "error", message: "Amount must be greater than zero" };
     }
     if (!Object.values(PaymentMethod).includes(method)) {
-      return { status: 'error', message: 'Invalid payment method' };
+      return { status: "error", message: "Invalid payment method" };
     }
 
     const submittedAt = submittedAtRaw ? new Date(submittedAtRaw) : new Date();
     if (isNaN(submittedAt.getTime())) {
-      return { status: 'error', message: 'Invalid date' };
+      return { status: "error", message: "Invalid date" };
     }
 
     // Check for duplicate pending request (same villa + same amount + same method
@@ -60,15 +62,16 @@ export async function submitPaymentRequestAction(
         villaId: villa.id,
         amount,
         method,
-        status: 'PENDING',
+        status: "PENDING",
         submittedAt: { gte: fiveMinutesAgo },
       },
     });
 
     if (recentDuplicate) {
       return {
-        status: 'error',
-        message: 'A similar request was just submitted. Check your pending requests.',
+        status: "error",
+        message:
+          "A similar request was just submitted. Check your pending requests.",
       };
     }
 
@@ -82,26 +85,34 @@ export async function submitPaymentRequestAction(
         reference,
         notes,
         submittedAt,
-        status: 'PENDING',
+        status: "PENDING",
       },
     });
 
     // Revalidate the affected pages
-    revalidatePath('/resident');
-    revalidatePath('/resident/pay');
-    revalidatePath('/resident/ledger');
-    revalidatePath('/admin/payments'); // for the admin queue (Step 30c)
+    revalidatePath("/resident");
+    revalidatePath("/resident/pay");
+    revalidatePath("/resident/ledger");
+    revalidatePath("/admin/payments"); // for the admin queue (Step 30c)
+
+    const adminIds = await getAllAdminIds();
+    await createBulkNotifications(adminIds, {
+      category: "PAYMENT",
+      title: "💰 New payment request",
+      body: `${user.name} submitted ₹${amount.toLocaleString("en-IN")} via ${method}`,
+      link: "/admin/payments",
+    });
 
     return {
-      status: 'success',
-      message: 'Payment request submitted',
+      status: "success",
+      message: "Payment request submitted",
       requestId: request.id,
     };
   } catch (e) {
-    console.error('[submitPaymentRequestAction] failed', e);
+    console.error("[submitPaymentRequestAction] failed", e);
     return {
-      status: 'error',
-      message: e instanceof Error ? e.message : 'Failed to submit request',
+      status: "error",
+      message: e instanceof Error ? e.message : "Failed to submit request",
     };
   }
 }

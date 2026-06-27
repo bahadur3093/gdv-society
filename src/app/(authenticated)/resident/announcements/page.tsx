@@ -3,11 +3,12 @@ import { Megaphone } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 
 import Link from "next/link";
-import { requireResident } from "@/lib/auth/auth";
 import Card, { CardBody } from "@/components/atoms/Card";
 import EmptyState from "@/components/organisms/EmptyState";
 import Badge from "@/components/atoms/Badge";
+import { requireResident } from "@/lib/auth/auth";
 import { formatRelativeTime } from "@/lib/utils/utils";
+import DOMPurify from 'dompurify';
 
 export const dynamic = "force-dynamic";
 
@@ -83,9 +84,7 @@ export default async function AnnouncementsPage() {
                   {a.title}
                 </h3>
 
-                <p className="text-body-sm text-text-secondary mt-2 line-clamp-2">
-                  {a.content}
-                </p>
+                <div className="text-body-sm text-text-secondary mt-2 line-clamp-2" dangerouslySetInnerHTML={{ __html: a.content }} />
 
                 <p className="text-micro uppercase text-text-muted mt-3 tracking-wider">
                   {formatRelativeTime(a.publishDate)}

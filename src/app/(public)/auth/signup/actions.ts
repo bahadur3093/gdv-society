@@ -7,6 +7,10 @@ import { hash } from "bcryptjs";
 import { validatePassword } from "@/lib/auth/common-passwords";
 import { checkRateLimit, recordFailedAttempt } from "@/lib/auth/rate-limit";
 import { notifyAdminOfSignup } from "@/lib/email/notify-admins";
+import {
+  createBulkNotifications,
+  getAllAdminIds,
+} from "@/lib/notifications/create";
 
 export interface SignupState {
   status: "idle" | "success" | "error";
@@ -237,6 +241,14 @@ export async function signupAction(
       newUserId: newUser.id,
     }).catch((err) => {
       console.error("[signupAction] Notification failed:", err);
+    });
+
+    const adminIds = await getAllAdminIds();
+    await createBulkNotifications(adminIds, {
+      category: "SYSTEM",
+      title: "🆕 New signup pending approval",
+      body: `${name} (${newUser.email}) is waiting for approval.`,
+      link: `/admin/residents/${newUser.id}`,
     });
 
     // ─── Auto sign-in (sets session) ───

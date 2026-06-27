@@ -215,7 +215,7 @@ export default function TelegramSearchPage() {
       {results && results.villas.length > 0 && (
         <div className="space-y-3">
           <SectionHeader
-            icon={<Home />}
+            icon={<Home className="w-full h-full" />}
             label="Villas"
             count={results.villas.length}
           />
@@ -238,7 +238,7 @@ export default function TelegramSearchPage() {
       {results && results.residents.length > 0 && (
         <div className="space-y-3">
           <SectionHeader
-            icon={<Users />}
+            icon={<Users className="w-full h-full" />}
             label="Residents"
             count={results.residents.length}
           />

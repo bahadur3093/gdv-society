@@ -24,6 +24,7 @@ model User {
   requestComments       RequestComment[]       @relation("CommentAuthor")
   residentRequests      ResidentRequest[]
   sessions              Session[]
+  notifications         Notification[]
 
   villa                Villa?
   maintenanceBills     MaintenanceBill[]
@@ -451,4 +452,21 @@ enum AccountStatus {
   PENDING
   APPROVED
   SUSPENDED
+}
+
+model Notification {
+  id          String   @id @default(cuid())
+  userId      String
+  category    String   // SYSTEM, BILLING, PAYMENT, HELPDESK, WATER, ANNOUNCEMENT
+  title       String
+  body        String?  // optional details
+  link        String?  // optional internal URL to navigate to on tap
+  isRead      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  readAt      DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }

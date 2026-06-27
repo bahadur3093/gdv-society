@@ -83,7 +83,7 @@ export default async function AnnouncementDetailPage({ params }: PageProps) {
           'whitespace-pre-wrap', // preserve line breaks from textarea input
           'leading-relaxed'
         )}>
-          {announcement.content}
+          <div dangerouslySetInnerHTML={{ __html: announcement.content }} />
         </div>
 
         {/* Attachments (if any) */}

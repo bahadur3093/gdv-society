@@ -71,7 +71,7 @@ export default function AnnouncementsListView({ rows, counts }: Props) {
     {
       key: "ACTIVE",
       label: "Active",
-      icon: <Eye />,
+      icon: <Eye className="w-full h-full" />,
       badge:
         counts.active > 0
           ? { label: String(counts.active), variant: "success" }
@@ -80,7 +80,7 @@ export default function AnnouncementsListView({ rows, counts }: Props) {
     {
       key: "INACTIVE",
       label: "Inactive",
-      icon: <EyeOff />,
+      icon: <EyeOff className="w-full h-full" />,
       badge:
         counts.inactive > 0
           ? { label: String(counts.inactive), variant: "neutral" }
@@ -89,7 +89,7 @@ export default function AnnouncementsListView({ rows, counts }: Props) {
     {
       key: "CRITICAL",
       label: "Critical",
-      icon: <AlertCircle />,
+      icon: <AlertCircle className="w-full h-full" />,
       badge:
         counts.critical > 0
           ? { label: String(counts.critical), variant: "danger" }

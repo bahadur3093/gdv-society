@@ -3,6 +3,7 @@
 import "server-only";
 import { prisma } from "@/lib/prisma";
 import { BillStatus } from "../enums";
+import { createNotification } from "../notifications/create";
 
 export interface GenerateBillsInput {
   month: number; // 1-12
@@ -128,8 +129,27 @@ export async function generateMonthlyBills(
   // ───────────────────────────────────────────────────────────
   // 3. Bulk insert
   // ───────────────────────────────────────────────────────────
+
   if (toCreate.length > 0) {
     await prisma.maintenanceBill.createMany({ data: toCreate });
+
+    // 🆕 Notify each resident whose villa was billed
+    const monthLabel = new Date(year, month - 1, 1).toLocaleString("en-IN", {
+      month: "long",
+      year: "numeric",
+    });
+
+    for (const bill of toCreate) {
+      if (bill.userId) {
+        await createNotification({
+          userId: bill.userId,
+          category: "BILLING",
+          title: "New maintenance bill",
+          body: `₹${bill.amount.toLocaleString("en-IN")} for ${monthLabel}. Due by ${bill.dueDate.toLocaleDateString("en-IN", { day: "numeric", month: "short" })}.`,
+          link: "/resident/ledger",
+        });
+      }
+    }
   }
 
   const totalAmount = toCreate.reduce((s, b) => s + b.amount, 0);

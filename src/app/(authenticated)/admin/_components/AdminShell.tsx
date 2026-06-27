@@ -3,15 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  Menu,
-  Search,
-  Bell,
-  Sun,
-  Moon,
-  ChevronRight,
-  LogOut,
-} from "lucide-react";
+import { Menu, Search, Sun, Moon, ChevronRight, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import Sidebar from "@/components/navigation/Sidebar";
@@ -24,6 +16,7 @@ import Avatar from "@/components/atoms/Avatar";
 import { buildAdminNav } from "./adminNav";
 import UserMenu from "@/components/navigation/UserMenu";
 import PullToRefresh from "@/components/organisms/PullToRefresh";
+import NotificationButton from "@/components/notifications/NotificationButton";
 
 interface AdminShellProps {
   userName: string;
@@ -48,7 +41,6 @@ export default function AdminShell({
   const ThemeIcon = resolved === "dark" ? Sun : Moon;
   const navSections = buildAdminNav(badges);
 
-  // Derive page title from current path (basic — overridden by PageHeader inside pages)
   const pageTitle = derivePageTitle(pathname);
 
   return (
@@ -107,22 +99,7 @@ export default function AdminShell({
           }
           actions={
             <>
-              <IconButton
-                label="Notifications"
-                icon={
-                  <div className="relative">
-                    <Bell />
-                    {badges.pendingRequests && badges.pendingRequests > 0 && (
-                      <span
-                        aria-hidden="true"
-                        className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-danger ring-2 ring-bg-base"
-                      />
-                    )}
-                  </div>
-                }
-                variant="ghost"
-                size="md"
-              />
+              <NotificationButton />
               <IconButton
                 label={`Switch to ${resolved === "dark" ? "light" : "dark"} mode`}
                 icon={<ThemeIcon />}

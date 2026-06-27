@@ -34,11 +34,11 @@ const initialState: AnnouncementActionState = { status: "idle" };
 // ─────────────────────────────────────────────────────────────
 
 const CATEGORIES = [
-  { value: "Maintenance", label: "Maintenance", icon: <Wrench /> },
-  { value: "Events", label: "Events", icon: <Sparkles /> },
-  { value: "Emergency", label: "Emergency", icon: <AlertTriangle /> },
-  { value: "General", label: "General", icon: <Megaphone /> },
-  { value: "Financial", label: "Financial", icon: <DollarSign /> },
+  { value: "Maintenance", label: "Maintenance", icon: <Wrench className="w-full h-full" /> },
+  { value: "Events", label: "Events", icon: <Sparkles className="w-full h-full" /> },
+  { value: "Emergency", label: "Emergency", icon: <AlertTriangle className="w-full h-full" /> },
+  { value: "General", label: "General", icon: <Megaphone className="w-full h-full" /> },
+  { value: "Financial", label: "Financial", icon: <DollarSign className="w-full h-full" /> },
 ];
 
 const PRIORITIES = [

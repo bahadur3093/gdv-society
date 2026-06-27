@@ -36,7 +36,7 @@ export default function PaymentsQueueView({ rows, counts }: Props) {
     {
       key: 'PENDING',
       label: 'Pending',
-      icon: <Clock />,
+      icon: <Clock className="w-full h-full" />,
       badge:
         counts.pending > 0
           ? { label: String(counts.pending), variant: 'danger' }
@@ -45,7 +45,7 @@ export default function PaymentsQueueView({ rows, counts }: Props) {
     {
       key: 'APPROVED',
       label: 'Approved',
-      icon: <CheckCircle2 />,
+      icon: <CheckCircle2 className="w-full h-full" />,
       badge:
         counts.approved > 0
           ? { label: String(counts.approved), variant: 'neutral' }
@@ -54,7 +54,7 @@ export default function PaymentsQueueView({ rows, counts }: Props) {
     {
       key: 'REJECTED',
       label: 'Rejected',
-      icon: <XCircle />,
+      icon: <XCircle className="w-full h-full" />,
       badge:
         counts.rejected > 0
           ? { label: String(counts.rejected), variant: 'neutral' }
