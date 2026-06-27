@@ -19,7 +19,7 @@ export const listAllVillas = tool({
       orderBy: { createdAt: "asc" },
     });
 
-    if (villas?.length) return "No villas found in the society";
+    if (!villas?.length) return "No villas found in the society";
 
     const lines = villas.map(
       (v, i) =>

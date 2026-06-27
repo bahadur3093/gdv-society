@@ -45,7 +45,7 @@ export async function processUserMessage(
   const toolsCalled: string[] = [];
 
   try {
-    const { text, steps } = await generateText({
+    const { text } = await generateText({
       model: telegramModel,
       system: SYSTEM_PROMPT,
       prompt: userMessage,
