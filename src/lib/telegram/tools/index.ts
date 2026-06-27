@@ -2,6 +2,7 @@ import { listPendingTool } from "./list-pending";
 import { listUnpaidTool } from "./list-unpaid";
 import { lookupResidentTool } from "./lookup-resident";
 import { lookupVillaTool } from "./lookup-villa";
+import { monthlyExpensesSummaryTool } from "./monthlyExpensesSummary";
 import { societyStatsTool } from "./society-stats";
 
 export const telegramTools = {
@@ -10,6 +11,7 @@ export const telegramTools = {
   society_stats: societyStatsTool,
   lookup_resident: lookupResidentTool,
   lookup_villa: lookupVillaTool,
+  monthly_expenses_summary: monthlyExpensesSummaryTool,
 };
 
 export type TelegramToolName = keyof typeof telegramTools;
