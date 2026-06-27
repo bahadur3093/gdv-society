@@ -10,6 +10,7 @@ export const telegramTools = {
   society_stats: societyStatsTool,
   lookup_resident: lookupResidentTool,
   lookup_villa: lookupVillaTool,
+  list_all_villas: lookupVillaTool,
 };
 
 export type TelegramToolName = keyof typeof telegramTools;
