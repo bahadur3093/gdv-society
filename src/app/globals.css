@@ -529,3 +529,145 @@ body {
   height: 0;
   pointer-events: none;
 }
+
+/* ─────────────────────────────────────────────────────────
+   GDV Toast styles — applied regardless of theme
+───────────────────────────────────────────────────────── */
+
+.gdv-toast {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  min-height: 80px;
+  width: 100%;
+  padding: 18px 48px 18px 20px;
+  border-radius: 16px;
+  background: #14141a;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  color: #f5f5f7;
+  overflow: hidden;
+  font-family: var(--font-sans, Inter, system-ui, sans-serif);
+}
+
+.gdv-toast-icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #71717a;
+  color: #14141a;
+  margin-top: 2px;
+}
+
+.gdv-toast-title {
+  font-size: 18px;
+  line-height: 1.25;
+  font-weight: 700;
+  color: #f5f5f7;
+}
+
+.gdv-toast-description {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #a1a1aa;
+  margin-top: 4px;
+}
+
+.gdv-toast-close {
+  position: absolute !important;
+  top: 12px !important;
+  right: 12px !important;
+  left: auto !important;
+  width: 28px !important;
+  height: 28px !important;
+  border-radius: 6px !important;
+  background: rgba(28, 28, 38, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.06) !important;
+  color: #71717a !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  transition: all 150ms ease;
+}
+
+.gdv-toast-close:hover {
+  background: #1c1c26 !important;
+  color: #f5f5f7 !important;
+}
+
+/* ── Variants — target Sonner data attributes ── */
+
+.gdv-toast[data-type="success"] {
+  background:
+    radial-gradient(
+      circle at 0% 50%,
+      rgba(52, 211, 153, 0.18) 0%,
+      transparent 50%
+    ),
+    #14141a;
+}
+.gdv-toast[data-type="success"] .gdv-toast-icon {
+  background: #34d399;
+  color: #0a0a0c;
+}
+
+.gdv-toast[data-type="error"] {
+  background:
+    radial-gradient(
+      circle at 0% 50%,
+      rgba(248, 113, 113, 0.18) 0%,
+      transparent 50%
+    ),
+    #14141a;
+}
+.gdv-toast[data-type="error"] .gdv-toast-icon {
+  background: #f87171;
+  color: #0a0a0c;
+}
+
+.gdv-toast[data-type="warning"] {
+  background:
+    radial-gradient(
+      circle at 0% 50%,
+      rgba(251, 191, 36, 0.18) 0%,
+      transparent 50%
+    ),
+    #14141a;
+}
+.gdv-toast[data-type="warning"] .gdv-toast-icon {
+  background: #fbbf24;
+  color: #0a0a0c;
+}
+
+.gdv-toast[data-type="info"] {
+  background:
+    radial-gradient(
+      circle at 0% 50%,
+      rgba(56, 189, 248, 0.18) 0%,
+      transparent 50%
+    ),
+    #14141a;
+}
+.gdv-toast[data-type="info"] .gdv-toast-icon {
+  background: #38bdf8;
+  color: #0a0a0c;
+}
+
+.gdv-toast[data-type="loading"] {
+  background:
+    radial-gradient(
+      circle at 0% 50%,
+      rgba(139, 92, 246, 0.18) 0%,
+      transparent 50%
+    ),
+    #14141a;
+}
+.gdv-toast[data-type="loading"] .gdv-toast-icon {
+  background: #8b5cf6;
+  color: #ffffff;
+}
