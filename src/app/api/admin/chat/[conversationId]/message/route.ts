@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
-import { streamText, convertToModelMessages, type UIMessage } from "ai";
+import {
+  streamText,
+  convertToModelMessages,
+  type UIMessage,
+  stepCountIs,
+} from "ai";
 import { createOpenAI } from "@ai-sdk/openai";
 import { auth } from "@/lib/auth/auth";
 import { isChatAllowedForEmail } from "@/lib/chat/access";
 import { prisma } from "@/lib/prisma";
 import { isValidModelId, DEFAULT_MODEL_ID } from "@/lib/chat/models";
-
-// 🆕 Import your chat tools here as you build them
-// import { monthlyExpensesSummaryTool } from '@/lib/chat/tools/monthly-expenses-summary';
-// import { highestOutstandingVillasTool } from '@/lib/chat/tools/highest-outstanding-villas';
+import { tools } from "@/lib/ai/tools";
 
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
@@ -21,18 +23,17 @@ const ollama = createOpenAI({
 const SYSTEM_PROMPT = `You are a helpful assistant for the GDV Society Hub admin.
 
 You have access to these tools:
-- monthlyExpensesSummaryTool: get society expense breakdown by category for a given month
-- highestOutstandingVillasTool: list villas with biggest unpaid amounts
+- getOutstandingBills: get outstanding maintenance bills for a villa number.
 
-Use a tool ONLY if the question matches its purpose.
+Use tools whenever current GDV Society data is required.
 
-For anything else (general questions, greetings, things not covered by tools),
-ANSWER DIRECTLY from your own knowledge. Do NOT say "I don't have access" — 
-just answer naturally as a helpful assistant.
+When a tool returns data, summarize it clearly for the admin.
+Do not expose raw JSON unless asked.
+Format currency as ₹X,XXX.
+Use plain text.
+Do not use markdown headers.
 
-NEVER attempt to use shell, bash, python, code execution, or any tool not listed above.
-
-Respond concisely. Format currency as ₹X,XXX. Use plain text — no markdown headers.`;
+NEVER attempt to use shell, bash, python, code execution, or any tool not provided to you.`;
 
 export async function POST(
   request: Request,
@@ -87,11 +88,8 @@ export async function POST(
       model: ollama.chat(selectedModel),
       system: SYSTEM_PROMPT,
       messages: await convertToModelMessages(messages),
-      tools: {
-        // 🆕 Register tools as you build them:
-        // monthlyExpensesSummaryTool,
-        // highestOutstandingVillasTool,
-      },
+      tools,
+      stopWhen: stepCountIs(3),
       onFinish: async ({ text }) => {
         const finalText =
           text?.trim() || "I'm not sure how to help with that. Try rephrasing.";

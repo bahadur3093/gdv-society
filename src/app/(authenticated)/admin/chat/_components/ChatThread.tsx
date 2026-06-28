@@ -9,7 +9,6 @@ import {
   Loader2,
   Sparkles,
   User as UserIcon,
-  Share2,
   Trash2,
   Copy,
   RefreshCw,
@@ -20,6 +19,14 @@ import { cn } from "@/lib/utils/utils";
 import { revalidateChatLayout } from "../actions";
 import { DEFAULT_MODEL_ID } from "@/lib/chat/models";
 import ModelPicker from "./ModelPicker";
+import MessageParts from "@/components/chat/MessageParts";
+
+type MessagePart = {
+  type: string;
+  text?: string;
+  output?: unknown;
+};
+
 
 interface InitialMessage {
   id: string;
@@ -215,7 +222,7 @@ export default function ChatThread({ conversationId, initialMessages }: Props) {
                 )}
               >
                 {(() => {
-                  const text = extractText(m);
+                  const text = <MessageParts parts={m.parts} />;
                   if (text) {
                     return (
                       <p className="text-body whitespace-pre-wrap leading-relaxed">
@@ -403,12 +410,14 @@ function SmallBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
   );
 }
 
-function extractText(message: {
-  parts?: Array<{ type: string; text?: string }>;
+export function extractText(message: {
+  parts?: MessagePart[];
 }): string {
   if (!message.parts) return "";
+
   return message.parts
     .filter((p) => p.type === "text" || p.type === "text-delta")
     .map((p) => p.text ?? "")
-    .join("");
+    .join("")
+    .trim();
 }
