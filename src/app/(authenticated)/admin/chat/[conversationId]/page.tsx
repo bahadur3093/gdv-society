@@ -1,9 +1,7 @@
 import { notFound } from "next/navigation";
-import { requireAdmin } from "@/lib/auth/auth";
 import { prisma } from "@/lib/prisma";
 import ChatThread from "../_components/ChatThread";
-
-export const dynamic = "force-dynamic";
+import { requireAdmin } from "@/lib/auth/auth";
 
 interface Props {
   params: Promise<{ conversationId: string }>;
@@ -22,6 +20,7 @@ export default async function ConversationPage({ params }: Props) {
           id: true,
           role: true,
           content: true,
+          parts: true,
           createdAt: true,
         },
       },
@@ -36,8 +35,15 @@ export default async function ConversationPage({ params }: Props) {
       initialMessages={conversation.messages.map((m) => ({
         id: m.id,
         role: m.role as "user" | "assistant",
-        text: m.content,
+        parts: toUIParts(m.parts, m.content),
       }))}
     />
   );
+}
+
+function toUIParts(parts: unknown, fallbackText: string) {
+  if (Array.isArray(parts) && parts.length > 0) {
+    return parts as Array<{ type: string; [k: string]: unknown }>;
+  }
+  return [{ type: "text", text: fallbackText }];
 }

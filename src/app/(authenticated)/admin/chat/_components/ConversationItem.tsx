@@ -79,7 +79,7 @@ export default function ConversationItem({
             />
             <div className="flex-1 min-w-0">
               <Tooltip label={c.title || "No title"}>
-                <p
+                <div
                   className={cn(
                     "text-body-sm font-medium truncate flex items-center gap-1.5",
                     isActive
@@ -109,11 +109,11 @@ export default function ConversationItem({
                   <span className="truncate">
                     {truncate(c.title || "Untitled", 16)}
                   </span>
-                </p>
+                </div>
               </Tooltip>
-              <p className="text-micro text-text-muted truncate">
+              <div className="text-micro text-text-muted truncate">
                 {timeAgo(c.updatedAt)}
-              </p>
+              </div>
             </div>
           </div>
 

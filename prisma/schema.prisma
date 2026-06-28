@@ -494,6 +494,7 @@ model ChatMessage {
   toolName       String?  // populated when role='tool'
   createdAt      DateTime @default(now())
   isPinned       Boolean  @default(false)
+  parts          Json?
 
   conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
 

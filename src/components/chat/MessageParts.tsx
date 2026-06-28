@@ -8,49 +8,41 @@ interface Part {
   state?: string;
 }
 
-export default function MessageParts({
-  parts,
-}: {
-  parts?: Part[];
-}) {
+export default function MessageParts({ parts }: { parts?: Part[] }) {
   if (!parts?.length) return null;
 
   return (
     <div className="space-y-2">
       {parts.map((part, i) => {
-        // ✅ TEXT
         if (part.type === "text" || part.type === "text-delta") {
           return (
-            <p
+            <div
               key={i}
               className="text-body-sm text-text-primary whitespace-pre-wrap"
             >
               {part.text}
-            </p>
+            </div>
           );
         }
 
-        // ✅ TOOL OUTPUT
+        // ✅ TOOL
         if (part.type.startsWith("tool-")) {
           const toolName = part.type.replace("tool-", "");
 
-          // Show loading skeleton until output available
           if (part.state !== "output-available") {
             return (
               <div
                 key={i}
                 className="rounded-xl border border-border-subtle bg-bg-elevated/40 p-3 animate-pulse"
               >
-                <p className="text-body-sm text-text-muted">
+                <div className="text-body-sm text-text-muted">
                   Running {toolName}…
-                </p>
+                </div>
               </div>
             );
           }
 
-          return (
-            <div key={i}>{renderToolUI(toolName, part.output)}</div>
-          );
+          return <div key={i}>{renderToolUI(toolName, part.output)}</div>;
         }
 
         return null;

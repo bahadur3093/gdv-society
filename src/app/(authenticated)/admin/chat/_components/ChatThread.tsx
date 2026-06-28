@@ -4,22 +4,12 @@ import { useEffect, useRef, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport } from "ai";
-import {
-  Send,
-  Loader2,
-  Sparkles,
-  User as UserIcon,
-  Trash2,
-  Copy,
-  RefreshCw,
-  ThumbsUp,
-  ThumbsDown,
-} from "lucide-react";
+import { Send, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils/utils";
 import { revalidateChatLayout } from "../actions";
 import { DEFAULT_MODEL_ID } from "@/lib/chat/models";
 import ModelPicker from "./ModelPicker";
-import MessageParts from "@/components/chat/MessageParts";
+import MessageBubble from "@/components/chat/MessageBubble";
 
 type MessagePart = {
   type: string;
@@ -27,11 +17,10 @@ type MessagePart = {
   output?: unknown;
 };
 
-
 interface InitialMessage {
   id: string;
   role: "user" | "assistant";
-  text: string;
+  parts: Array<{ type: string; [k: string]: unknown }>;
 }
 
 interface Props {
@@ -64,6 +53,8 @@ export default function ChatThread({ conversationId, initialMessages }: Props) {
   }, [model]);
 
   const { messages, sendMessage, status, error, setMessages } = useChat({
+    id: conversationId,
+    messages: initialMessages as any,
     transport: new DefaultChatTransport({
       api: `/api/admin/chat/${conversationId}/message`,
       body: () => ({ model }),
@@ -73,19 +64,6 @@ export default function ChatThread({ conversationId, initialMessages }: Props) {
   useEffect(() => {
     localStorage.setItem("chat-model", model);
   }, [model]);
-
-  // Hydrate from DB
-  useEffect(() => {
-    if (initialMessages.length > 0) {
-      setMessages(
-        initialMessages.map((m) => ({
-          id: m.id,
-          role: m.role,
-          parts: [{ type: "text" as const, text: m.text }],
-        })),
-      );
-    }
-  }, []); // eslint-disable-line
 
   // Auto-send initial
   useEffect(() => {
@@ -142,11 +120,12 @@ export default function ChatThread({ conversationId, initialMessages }: Props) {
   };
 
   return (
-    <main className="flex-1 flex flex-col bg-bg-elevated/30 border border-border-default rounded-xl overflow-hidden relative">
+    <main className="flex-1 flex flex-col bg-bg-elevated/30 border border-border-default md:rounded-xl overflow-hidden relative">
       {/* Header */}
       <header
         className={cn(
-          "h-16 flex items-center justify-between gap-3 px-5",
+          "flex items-center justify-between gap-3",
+          "h-14 md:h-16 px-3 md:px-5",
           "border-b border-border-subtle",
           "bg-bg-elevated/80 backdrop-blur-md",
           "sticky top-0 z-10",
@@ -184,113 +163,37 @@ export default function ChatThread({ conversationId, initialMessages }: Props) {
       {/* Messages */}
       <div
         ref={scrollRef}
-        className="flex-1 overflow-y-auto p-6 space-y-6 scroll-smooth pb-44"
+        className={cn(
+          "flex-1 overflow-y-auto scroll-smooth",
+          "p-3 md:p-6 space-y-4 md:space-y-6",
+          "pb-32 md:pb-44",
+        )}
       >
         {messages.map((m, idx) => {
-          const isUser = m.role === "user";
           const prevSameAuthor = idx > 0 && messages[idx - 1].role === m.role;
+
           return (
-            <div
+            <MessageBubble
               key={m.id}
-              className={cn(
-                "flex items-start gap-3",
-                isUser ? "justify-end ml-12" : "justify-start mr-12",
-              )}
-            >
-              {/* Assistant avatar (hide on grouped messages) */}
-              {!isUser && (
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-full shrink-0",
-                    "bg-(image:--gradient-brand)",
-                    "flex items-center justify-center",
-                    "shadow-md shadow-brand-primary/20",
-                    prevSameAuthor && "opacity-0",
-                  )}
-                >
-                  <Sparkles className="w-4 h-4 text-white" />
-                </div>
-              )}
-
-              {/* Bubble */}
-              <div
-                className={cn(
-                  "max-w-[80%] px-4 py-3 rounded-2xl shadow-md",
-                  isUser
-                    ? "bg-brand-primary/20 border border-brand-primary/30 text-text-primary rounded-tr-sm"
-                    : "bg-bg-elevated border border-border-subtle text-text-primary rounded-tl-sm",
-                )}
-              >
-                {(() => {
-                  const text = <MessageParts parts={m.parts} />;
-                  if (text) {
-                    return (
-                      <p className="text-body whitespace-pre-wrap leading-relaxed">
-                        {text}
-                      </p>
-                    );
-                  }
-
-                  if (m.role === "assistant" && status !== "streaming") {
-                    return (
-                      <p className="text-body-sm text-text-muted italic">
-                        I&apos;m not sure how to help with that. Try rephrasing.
-                      </p>
-                    );
-                  }
-                  return null;
-                })()}
-
-                {/* Assistant message actions */}
-                {!isUser && (
-                  <div className="flex items-center gap-1 mt-3 pt-2 border-t border-border-subtle">
-                    <SmallBtn
-                      icon={<Copy className="w-3.5 h-3.5" />}
-                      label="Copy"
-                    />
-                    <SmallBtn
-                      icon={<RefreshCw className="w-3.5 h-3.5" />}
-                      label="Regenerate"
-                    />
-                    <div className="flex-1" />
-                    <SmallBtn
-                      icon={<ThumbsUp className="w-3.5 h-3.5" />}
-                      label="Good"
-                    />
-                    <SmallBtn
-                      icon={<ThumbsDown className="w-3.5 h-3.5" />}
-                      label="Bad"
-                    />
-                  </div>
-                )}
-              </div>
-
-              {/* User avatar */}
-              {isUser && (
-                <div
-                  className={cn(
-                    "w-8 h-8 rounded-full bg-bg-sunken border border-border-subtle",
-                    "flex items-center justify-center text-text-muted shrink-0",
-                    prevSameAuthor && "opacity-0",
-                  )}
-                >
-                  <UserIcon className="w-4 h-4" />
-                </div>
-              )}
-            </div>
+              role={m.role as "user" | "assistant"}
+              parts={m.parts as any}
+              hideAvatar={prevSameAuthor}
+              onCopy={() => {
+                const text = extractText({ parts: m.parts as any });
+                navigator.clipboard.writeText(text);
+              }}
+              onRegenerate={() => {
+                // optional: trigger sendMessage with last user input
+              }}
+              onThumb={(value) => {
+                console.log("feedback", value, m.id);
+              }}
+            />
           );
         })}
 
         {status === "streaming" && (
-          <div className="flex items-start gap-3 mr-12">
-            <div className="w-8 h-8 rounded-full bg-(image:--gradient-brand) flex items-center justify-center">
-              <Sparkles className="w-4 h-4 text-white" />
-            </div>
-            <div className="bg-bg-elevated border border-border-subtle rounded-2xl rounded-tl-sm px-4 py-3 flex items-center gap-2 text-text-muted text-body-sm">
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
-              Thinking…
-            </div>
-          </div>
+          <MessageBubble role="assistant" parts={[]} isStreaming />
         )}
 
         {error && (
@@ -337,6 +240,7 @@ export default function ChatThread({ conversationId, initialMessages }: Props) {
               autoFocus
               className={cn(
                 "w-full h-14 pl-5 pr-14",
+                "h-12 md:h-14",
                 "bg-bg-sunken border border-border-default rounded-2xl",
                 "text-body text-text-primary placeholder:text-text-muted",
                 "focus:outline-none focus:ring-2 focus:ring-brand-primary/30 focus:border-brand-primary",
@@ -360,40 +264,9 @@ export default function ChatThread({ conversationId, initialMessages }: Props) {
               <Send className="w-4 h-4" />
             </button>
           </form>
-
-          <p className="text-center text-micro text-text-muted px-4">
-            Society AI can make mistakes. Verify critical financial data.
-          </p>
         </div>
       </div>
     </main>
-  );
-}
-
-// ─── Small button helpers ───
-function IconBtn({
-  icon,
-  label,
-  danger = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  danger?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      title={label}
-      aria-label={label}
-      className={cn(
-        "p-2 rounded-lg transition-colors",
-        danger
-          ? "text-danger/70 hover:text-danger hover:bg-danger/10"
-          : "text-text-muted hover:text-text-primary hover:bg-bg-sunken",
-      )}
-    >
-      {icon}
-    </button>
   );
 }
 
@@ -410,9 +283,7 @@ function SmallBtn({ icon, label }: { icon: React.ReactNode; label: string }) {
   );
 }
 
-export function extractText(message: {
-  parts?: MessagePart[];
-}): string {
+export function extractText(message: { parts?: MessagePart[] }): string {
   if (!message.parts) return "";
 
   return message.parts

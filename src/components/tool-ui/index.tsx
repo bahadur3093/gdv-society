@@ -1,26 +1,10 @@
-import OutstandingBillsView from "./tools/OutstandingBillsView";
+import BlockRenderer from "./ui-dsl/BlockRenderer";
+import { ToolResult } from "./ui-dsl/schema";
 
-type ToolOutputMap = {
-  getOutstandingBills: {
-    count: number;
-    bills: {
-      month: number;
-      year: number;
-      amount: number;
-      status: "PENDING" | "PARTIAL" | "PAID";
-    }[];
-  };
-};
+export function renderToolUI(_toolName: string, output: unknown) {
+  const result = output as ToolResult | undefined;
 
-export function renderToolUI(toolName: string, output: any) {
-  switch (toolName) {
-    case "getOutstandingBills":
-      return (
-        <OutstandingBillsView
-          {...(output as ToolOutputMap["getOutstandingBills"])}
-        />
-      );
-    default:
-      return null;
-  }
+  if (!result?.ui) return null;
+
+  return <BlockRenderer block={result.ui} />;
 }

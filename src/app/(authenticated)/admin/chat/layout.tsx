@@ -3,6 +3,7 @@ import { requireAdmin } from "@/lib/auth/auth";
 import { isChatAllowedForEmail } from "@/lib/chat/access";
 import { prisma } from "@/lib/prisma";
 import ChatSidebar from "./_components/ChatSidebar";
+import ChatShell from "./_components/ChatShell";
 
 export const dynamic = "force-dynamic";
 
@@ -19,10 +20,7 @@ export default async function ChatLayout({
 
   const conversations = await prisma.chatConversation.findMany({
     where: { userId: admin.id },
-    orderBy: [
-      { isPinned: "desc" },
-      { updatedAt: "desc" },
-    ],
+    orderBy: [{ isPinned: "desc" }, { updatedAt: "desc" }],
     take: 50,
     select: {
       id: true,
@@ -33,14 +31,13 @@ export default async function ChatLayout({
   });
 
   return (
-    <div className="flex h-[calc(100vh-128px)] gap-4">
-      <ChatSidebar
-        conversations={conversations.map((c) => ({
-          ...c,
-          updatedAt: c.updatedAt.toISOString(),
-        }))}
-      />
+    <ChatShell
+      conversations={conversations.map((c) => ({
+        ...c,
+        updatedAt: c.updatedAt.toISOString(),
+      }))}
+    >
       {children}
-    </div>
+    </ChatShell>
   );
 }

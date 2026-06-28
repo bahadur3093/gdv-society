@@ -13,6 +13,7 @@ import SidebarSearch from "./SidebarSearch";
 import ConversationItem from "./ConversationItem";
 import DeleteConversationModal from "./DeleteConversationModal";
 import EditTitleModal from "./EditTitleModal";
+import { cn } from "@/lib/utils/utils";
 
 interface Props {
   conversations: ConversationSummary[];
@@ -42,7 +43,13 @@ export default function ChatSidebar({ conversations }: Props) {
   const isEmpty = filteredConversations.length === 0;
 
   return (
-    <aside className="w-72 shrink-0 flex flex-col bg-bg-elevated/40 border border-border-default rounded-xl overflow-hidden">
+    <aside
+      className={cn(
+        "flex flex-col bg-bg-elevated/40 border border-border-default rounded-xl overflow-hidden",
+        "w-full md:w-72 shrink-0",
+        "h-full",
+      )}
+    >
       <SidebarHeader />
 
       <SidebarSearch value={query} onChange={setQuery} />
@@ -77,7 +84,9 @@ export default function ChatSidebar({ conversations }: Props) {
                   conversation={c}
                   isActive={c.id === activeId}
                   flash={flashIds[c.id]}
-                  onEditTitle={(id, title) => openModal("EDIT_TITLE", id, title)}
+                  onEditTitle={(id, title) =>
+                    openModal("EDIT_TITLE", id, title)
+                  }
                   onTogglePin={togglePin}
                   onRequestDelete={(id) => openModal("DELETE", id)}
                 />

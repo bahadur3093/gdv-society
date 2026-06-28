@@ -163,10 +163,6 @@ export default function EmptyChatView() {
               )}
             </button>
           </form>
-
-          <p className="text-center text-micro text-text-muted">
-            Society AI can make mistakes. Verify critical financial data.
-          </p>
         </div>
       </div>
     </main>
