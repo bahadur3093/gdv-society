@@ -17,6 +17,7 @@ import { buildAdminNav } from "./adminNav";
 import UserMenu from "@/components/navigation/UserMenu";
 import PullToRefresh from "@/components/organisms/PullToRefresh";
 import NotificationButton from "@/components/notifications/NotificationButton";
+import { isChatAllowedForEmail } from "@/lib/chat/access";
 
 interface AdminShellProps {
   userName: string;
@@ -34,12 +35,13 @@ export default function AdminShell({
   badges,
   children,
 }: AdminShellProps) {
+  const chatEnabled = isChatAllowedForEmail(userEmail);
   const { resolved, toggle } = useTheme();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const pathname = usePathname();
 
   const ThemeIcon = resolved === "dark" ? Sun : Moon;
-  const navSections = buildAdminNav(badges);
+  const navSections = buildAdminNav(badges, {chatEnabled});
 
   const pageTitle = derivePageTitle(pathname);
 

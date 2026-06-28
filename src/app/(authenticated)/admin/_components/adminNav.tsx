@@ -9,6 +9,8 @@ import {
   Megaphone,
   MessageSquare,
   Settings as SettingsIcon,
+  Bot,
+  Package,
 } from "lucide-react";
 import type { SidebarSection } from "@/components/navigation/Sidebar";
 
@@ -17,8 +19,11 @@ export function buildAdminNav(
     pendingRequests?: number;
     pendingPayments?: number;
   } = {},
+  options: {
+    chatEnabled?: boolean;
+  } = {},
 ): SidebarSection[] {
-  return [
+  const sections: SidebarSection[] = [
     {
       key: "operations",
       title: "Operations",
@@ -104,4 +109,22 @@ export function buildAdminNav(
       ],
     },
   ];
+
+  if (options.chatEnabled) {
+    sections.push({
+      key: "ai",
+      title: "AI",
+      items: [
+        { key: "chat", href: "/admin/chat", icon: <Bot />, label: "Chat" },
+        {
+          key: "AI LLM's",
+          href: "/admin/ai-models",
+          icon: <Package />,
+          label: "Models",
+        },
+      ],
+    });
+  }
+
+  return sections;
 }
