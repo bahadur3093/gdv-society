@@ -60,10 +60,10 @@ const NAV_ITEMS: TabItem[] = [
     label: "Announcements",
   },
   {
-    key: "requests",
+    key: "support",
     href: "/resident/requests",
     icon: <LifeBuoy className="w-full h-full" />,
-    label: "Helpdesk",
+    label: "Support",
   },
   {
     key: "profile",
