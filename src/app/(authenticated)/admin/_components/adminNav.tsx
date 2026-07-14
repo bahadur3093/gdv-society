@@ -11,6 +11,7 @@ import {
   Settings as SettingsIcon,
   Bot,
   Package,
+  LifeBuoy,
 } from "lucide-react";
 import type { SidebarSection } from "@/components/navigation/Sidebar";
 
@@ -93,6 +94,12 @@ export function buildAdminNav(
           badge: badges.pendingRequests
             ? { label: String(badges.pendingRequests), variant: "danger" }
             : undefined,
+        },
+        {
+          key: "helpdesk",
+          href: "/admin/helpdesk",
+          icon: <LifeBuoy />,
+          label: "Helpdesk",
         },
       ],
     },

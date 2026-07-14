@@ -97,7 +97,6 @@ export default function ChatShell({ conversations, children }: Props) {
       <main
         className={cn(
           "flex-1 min-w-0 flex flex-col",
-          // Reserve space for mobile top bar
           "pt-12 md:pt-0",
         )}
       >

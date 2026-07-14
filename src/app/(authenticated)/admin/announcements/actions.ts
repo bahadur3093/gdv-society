@@ -7,7 +7,6 @@ import {
   createBulkNotifications,
   getAllApprovedResidentIds,
 } from "@/lib/notifications/create";
-import { convert } from "html-to-text";
 
 // ─────────────────────────────────────────────────────────────
 //  Types

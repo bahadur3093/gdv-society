@@ -53,10 +53,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = (user as any).role;
-        token.plotNumber = (user as any).plotNumber;
-        token.emailVerified = (user as any).emailVerified;
-        token.accountStatus = (user as any).accountStatus;
+        token.role = (user as User).role;
+        token.plotNumber = (user as User).plotNumber;
+        token.emailVerified = (user as User).emailVerified;
+        token.accountStatus = (user as User).accountStatus;
         token.email = user.email;
         token.name = user.name;
         return token;

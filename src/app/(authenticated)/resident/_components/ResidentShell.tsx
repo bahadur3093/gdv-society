@@ -8,6 +8,7 @@ import {
   Sun,
   Moon,
   TrendingDown,
+  LifeBuoy,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 import Link from "next/link";
@@ -52,12 +53,17 @@ const NAV_ITEMS: TabItem[] = [
     icon: <TrendingDown className="w-full h-full" />,
     label: "Finances",
   },
-
   {
     key: "announcements",
     href: "/resident/announcements",
     icon: <Bell className="w-full h-full" />,
     label: "Announcements",
+  },
+  {
+    key: "requests",
+    href: "/resident/requests",
+    icon: <LifeBuoy className="w-full h-full" />,
+    label: "Helpdesk",
   },
   {
     key: "profile",

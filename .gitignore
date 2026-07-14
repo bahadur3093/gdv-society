@@ -160,3 +160,6 @@ tmp/
 temp/
 /src/generated/prisma
 .env*
+
+# Scripts
+scripts/script.ts
